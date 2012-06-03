@@ -15,8 +15,8 @@
 
         public MainGame()
         {
-            graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
+            graphics = new GraphicsDeviceManager(this);
         }
 
         /// <summary>
