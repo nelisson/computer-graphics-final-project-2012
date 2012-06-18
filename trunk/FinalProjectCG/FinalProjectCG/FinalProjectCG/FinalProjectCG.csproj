@@ -114,11 +114,13 @@
   <ItemGroup>
     <Content Include="Game.ico" />
     <Content Include="GameThumbnail.png" />
+    <Content Include="NinjaAnimationRanges.txt" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FinalProjectCGContent\FinalProjectCGContent.contentproj">
-      <Name>FinalProjectCGContent</Name>
+      <Name>FinalProjectCGContent %28Content%29</Name>
       <XnaReferenceType>Content</XnaReferenceType>
+      <Project>{00D7EFCC-0168-4192-9ADB-9C02F8544CFF}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

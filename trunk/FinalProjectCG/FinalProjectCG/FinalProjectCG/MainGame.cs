@@ -1,79 +1,141 @@
 ﻿namespace FinalProjectCG
 {
+    using System;
+    using System.Linq;
     using Microsoft.Xna.Framework;
     using Microsoft.Xna.Framework.Graphics;
     using Microsoft.Xna.Framework.Input;
-    using System.Linq;
 
     /// <summary>
     ///   This is the main type for your game
     /// </summary>
     public class MainGame : Game
     {
-        private GraphicsDeviceManager graphics;
-        private SpriteBatch spriteBatch;
+        private readonly GraphicsDeviceManager _graphics;
+        // Cache information about the model size and position.
+        private Matrix[] _boneTransforms;
+        private Model _model;
+        private Vector3 _modelCenter;
+        private float _modelRadius;
+
+
+        /// <summary>
+        ///   Gets or sets the current model.
+        /// </summary>
+        public Model Model
+        {
+            get { return _model; }
+
+            set
+            {
+                _model = value;
+
+                if (_model != null)
+                {
+                    MeasureModel();
+                }
+            }
+        }
 
         public MainGame()
         {
+            _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
-            graphics = new GraphicsDeviceManager(this);
         }
 
-        /// <summary>
-        ///   Allows the game to perform any initialization it needs to before starting to run. This is where it can query for any required services and load any non-graphic related content. Calling base.Initialize will enumerate through any components and initialize them as well.
-        /// </summary>
-        protected override void Initialize()
-        {
-            // TODO: Add your initialization logic here
-
-            base.Initialize();
-        }
-
-        /// <summary>
-        ///   LoadContent will be called once per game and is the place to load all of your content.
-        /// </summary>
         protected override void LoadContent()
         {
-            // Create a new SpriteBatch, which can be used to draw textures.
-            spriteBatch = new SpriteBatch(GraphicsDevice);// teste commit
-
-            // TODO: use this.Content to load your game content here
+            Model = Content.Load<Model>("Ninjas\\GreenNinja");
         }
 
-        /// <summary>
-        ///   UnloadContent will be called once per game and is the place to unload all content.
-        /// </summary>
         protected override void UnloadContent()
         {
-            // TODO: Unload any non ContentManager content here
         }
 
-        /// <summary>
-        ///   Allows the game to run logic such as updating the world, checking for collisions, gathering input, and playing audio.
-        /// </summary>
-        /// <param name="gameTime"> Provides a snapshot of timing values. </param>
         protected override void Update(GameTime gameTime)
         {
             // Allows the game to exit
-            if (Keyboard.GetState(PlayerIndex.One).GetPressedKeys().Contains(Keys.Escape))
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 Exit();
 
-            // TODO: Add your update logic here
 
             base.Update(gameTime);
         }
 
-        /// <summary>
-        ///   This is called when the game should draw itself.
-        /// </summary>
-        /// <param name="gameTime"> Provides a snapshot of timing values. </param>
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+            _graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            // TODO: Add your drawing code here
+            if (_model != null)
+            {
 
+                float aspectRatio = GraphicsDevice.Viewport.AspectRatio;
+
+                float nearClip = _modelRadius / 100;
+                float farClip = _modelRadius * 100;
+
+                Matrix world = Matrix.Identity;
+                Matrix view = Matrix.CreateLookAt(new Vector3(_modelCenter.X, _modelCenter.Y, _modelCenter.Z*10), _modelCenter, Vector3.Up);
+                Matrix projection = Matrix.CreatePerspectiveFieldOfView(1, aspectRatio,
+                                                                        nearClip, farClip);
+
+                // Draw the model.
+                foreach (var mesh in _model.Meshes)
+                {
+                    foreach (BasicEffect effect in mesh.Effects)
+                    {
+                        effect.World = _boneTransforms[mesh.ParentBone.Index] * world;
+                        effect.View = view;
+                        effect.Projection = projection;
+
+                        effect.EnableDefaultLighting();
+                        effect.PreferPerPixelLighting = true;
+                        effect.SpecularPower = 20;
+                    }
+                    mesh.Draw();
+                }
+            }
+           
             base.Draw(gameTime);
+        }
+
+        /// <summary>
+        ///   Whenever a new model is selected, we examine it to see how big it is and where it is centered. This lets us automatically zoom the display, so we can correctly handle models of any scale.
+        /// </summary>
+        private void MeasureModel()
+        {
+            // Look up the absolute bone transforms for this model.
+            _boneTransforms = new Matrix[_model.Bones.Count];
+
+            _model.CopyAbsoluteBoneTransformsTo(_boneTransforms);
+
+            // Compute an (approximate) model center position by
+            // averaging the center of each mesh bounding sphere.
+            _modelCenter = Vector3.Zero;
+
+            foreach (var meshCenter in _model.Meshes.Select(mesh => Vector3.Transform(mesh.BoundingSphere.Center, _boneTransforms[mesh.ParentBone.Index])))
+            {
+                _modelCenter += meshCenter;
+            }
+
+            _modelCenter /= _model.Meshes.Count;
+
+            // Now we know the center point, we can compute the model radius
+            // by examining the radius of each mesh bounding sphere.
+            _modelRadius = 0;
+
+            foreach (var mesh in _model.Meshes)
+            {
+                Matrix transform = _boneTransforms[mesh.ParentBone.Index];
+                Vector3 meshCenter = Vector3.Transform(mesh.BoundingSphere.Center, transform);
+
+                float transformScale = transform.Forward.Length();
+
+                float meshRadius = (meshCenter - _modelCenter).Length() +
+                                   (mesh.BoundingSphere.Radius * transformScale);
+
+                _modelRadius = Math.Max(_modelRadius, meshRadius);
+            }
         }
     }
 }

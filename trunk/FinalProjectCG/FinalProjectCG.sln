@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinalProjectCG", "FinalProjectCG\FinalProjectCG\FinalProjectCG.csproj", "{0BE213C1-EF95-498C-8530-479F8E595D29}"
 EndProject
-Project("{96E2B04D-8817-42C6-938A-82C39BA4D311}") = "FinalProjectCGContent", "FinalProjectCG\FinalProjectCGContent\FinalProjectCGContent.contentproj", "{00D7EFCC-0168-4192-9ADB-9C02F8544CFF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinalProjectCGContent", "FinalProjectCG\FinalProjectCGContent\FinalProjectCGContent.contentproj", "{00D7EFCC-0168-4192-9ADB-9C02F8544CFF}"
 EndProject
 Global
 	GlobalSection(SubversionScc) = preSolution
