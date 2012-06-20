@@ -45,7 +45,7 @@
 
         protected override void LoadContent()
         {
-            Model = Content.Load<Model>("Ninjas\\GreenNinja");
+            Model = Content.Load<Model>("Ninjas\\BlueNinja");
         }
 
         protected override void UnloadContent()
@@ -75,7 +75,7 @@
                 float farClip = _modelRadius * 100;
 
                 Matrix world = Matrix.Identity;
-                Matrix view = Matrix.CreateLookAt(new Vector3(_modelCenter.X, _modelCenter.Y, _modelCenter.Z*10), _modelCenter, Vector3.Up);
+                Matrix view = Matrix.CreateLookAt(new Vector3(_modelCenter.X, _modelCenter.Y, _modelCenter.Z*20), _modelCenter, Vector3.Up);
                 Matrix projection = Matrix.CreatePerspectiveFieldOfView(1, aspectRatio,
                                                                         nearClip, farClip);
 
