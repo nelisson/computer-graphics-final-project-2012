@@ -1,6 +1,7 @@
 ﻿namespace FinalProjectCG
 {
     using Microsoft.Xna.Framework;
+    using Microsoft.Xna.Framework.Graphics;
     using Microsoft.Xna.Framework.Input;
     using Ninja;
 
@@ -10,6 +11,7 @@
     public class MainGame : Game
     {
         private Ninja.Ninja _ninja;
+        SpriteBatch mBatch;
 
         public MainGame()
         {
@@ -23,6 +25,7 @@
         /// </summary>
         protected override void LoadContent()
         {
+            mBatch = new SpriteBatch(GraphicsDevice);
             _ninja = new Ninja.Ninja(GraphicsDevice);
         }
 
@@ -37,38 +40,10 @@
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 Exit();
 
-            UpdateNinja();
+            _ninja.Update(GamePad.GetState(PlayerIndex.One));
 
             base.Update(gameTime);
         }
-
-        private void UpdateNinja()
-        {
-            if ((GamePad.GetState(PlayerIndex.One).Buttons.A == ButtonState.Pressed) || 
-                Keyboard.GetState(PlayerIndex.One).IsKeyDown(Keys.A))
-            {
-                _ninja.SetAnimation(NinjaAnimation.Jump);
-            }
-
-            if ((GamePad.GetState(PlayerIndex.One).Buttons.B == ButtonState.Pressed) ||
-                Keyboard.GetState(PlayerIndex.One).IsKeyDown(Keys.S))
-            {
-                _ninja.SetAnimation(NinjaAnimation.SideKick);
-            }
-
-            if ((GamePad.GetState(PlayerIndex.One).Buttons.X == ButtonState.Pressed) ||
-                Keyboard.GetState(PlayerIndex.One).IsKeyDown(Keys.D))
-            {
-                _ninja.SetAnimation(NinjaAnimation.Overhead);
-            }
-
-            if ((GamePad.GetState(PlayerIndex.One).Buttons.Y == ButtonState.Pressed) ||
-                Keyboard.GetState(PlayerIndex.One).IsKeyDown(Keys.F))
-            {
-                _ninja.SetAnimation(NinjaAnimation.SpinningSword);
-            }
-        }
-
 
         /// <summary>
         /// This is called when the game should draw itself.

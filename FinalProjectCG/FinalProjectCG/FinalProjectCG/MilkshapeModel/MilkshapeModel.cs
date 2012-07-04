@@ -1144,6 +1144,17 @@ namespace FinalProjectCG.MilkshapeModel
             loadMS3DFromFile(FileName, gd);
         }
 
+        public short MaterialIndex
+        {
+            set
+            {
+                foreach (var milkshapeGroup in Groups)
+                {
+                    milkshapeGroup.MaterialIndex = value;
+                }
+            }
+        }
+
         public static VertexDeclaration vd = new VertexDeclaration(CustomVertexStruct.VertexElements);
         public BasicEffect BasicEffect
         {
