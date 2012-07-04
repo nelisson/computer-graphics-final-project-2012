@@ -20,6 +20,9 @@
         private int _currentHealth;
         private bool _walking;
 
+        public Vector3 Position = Vector3.Zero;
+        public float Rotation;
+
         public Ninja(GraphicsDevice device)
         {
             CurrentHealth = 100;
@@ -112,6 +115,7 @@
             Animations.Configure(NinjaAnimation.GroundBack)
                 .PermitReentry(NinjaAnimation.GroundBack)
                 .Permit(NinjaAnimation.Idle2, NinjaAnimation.Idle2)
+                .Permit(NinjaAnimation.WalkNormal, NinjaAnimation.WalkNormal)
                 .OnEntry(() =>
                              {
                                  Velocity = 1;
@@ -121,6 +125,7 @@
             Animations.Configure(NinjaAnimation.WalkNormal)
                 .PermitReentry(NinjaAnimation.WalkNormal)
                 .Permit(NinjaAnimation.Idle2, NinjaAnimation.Idle2)
+                .Permit(NinjaAnimation.Death1, NinjaAnimation.Death1)
                 .OnEntry(() =>
                              {
                                  Velocity = 1.5f;
@@ -225,7 +230,7 @@
                 if (_walking)
                 {
                     IsRunning = true;
-                    Animations.Fire(NinjaAnimation.WalkNormal);
+                    Animations.Fire(IsAlive ? NinjaAnimation.WalkNormal : NinjaAnimation.GroundBack);
                 }
                 else
                     Animations.Fire(IsAlive ? NinjaAnimation.Idle2 : NinjaAnimation.GroundBack);
@@ -258,6 +263,15 @@
             var keyboardState = Keyboard.GetState(PlayerIndex.One);
             var lista = GamePadUtilities.GetPressed(getState);
 
+            // In case you get lost, press A to warp back to the center.
+            if (lista.Contains(Buttons.Start))
+            {
+                Position = Vector3.Zero;
+                Rotation = 0.0f;
+            }
+
+           // Find out what direction we should be thrusting, using rotation.
+
             if (!IsAlive && Animations.State != NinjaAnimation.GroundBack)
                 Animations.Fire(NinjaAnimation.Death1);
 
@@ -265,7 +279,7 @@
                 (keyboardState.IsKeyDown(Keys.Down) || keyboardState.IsKeyDown(Keys.Up)
                  || keyboardState.IsKeyDown(Keys.Left) || keyboardState.IsKeyDown(Keys.Right)))
             {
-                if (!IsRunning && Animations.State == NinjaAnimation.Idle2)
+                if (!IsRunning && Animations.State == NinjaAnimation.Idle2 && Animations.State != NinjaAnimation.Death1)
                 {
                     _walking = true;
                     Animations.Fire(NinjaAnimation.WalkNormal);
@@ -308,6 +322,42 @@
             else
             {
                 Blocked = false;
+            }
+
+            Vector2 leftStick = GamePad.GetState(PlayerIndex.One).ThumbSticks.Left;
+
+            if (keyboardState.IsKeyDown(Keys.Down))
+            {
+                leftStick.Y = -1;
+            }
+            if (keyboardState.IsKeyDown(Keys.Up))
+            {
+                leftStick.Y = 1;
+            }
+            if (keyboardState.IsKeyDown(Keys.Left))
+            {
+                leftStick.X = -1;
+            }
+            if (keyboardState.IsKeyDown(Keys.Right))
+            {
+                leftStick.X = 1;
+            }
+
+            leftStick.Normalize();
+            if ((leftStick.X >= 0 || leftStick.X <= 0) || (leftStick.Y >= 0 || leftStick.Y <= 0))
+            {
+                Rotation = (float)Math.Acos(-leftStick.Y);
+
+                if (leftStick.X < 0.0f)
+                    Rotation = -Rotation;
+            }
+
+
+            if (!(float.IsNaN(leftStick.X) || float.IsNaN(leftStick.Y)))
+            {
+                // Rotate the model using the left thumbstick, and scale it down.
+                Position.X += -leftStick.X*1.5f;
+                Position.Z += leftStick.Y*1.5f;
             }
 
             if (keyboardState.IsKeyDown(Keys.A))
