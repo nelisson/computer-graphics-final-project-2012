@@ -13,6 +13,7 @@
         private SpriteBatch _mBatch;
         private Texture2D _mHealthBar;
         private Ninja.Ninja _ninja;
+        private Dwarf.Dwarf _dwarf;
 
         public MainGame()
         {
@@ -27,6 +28,7 @@
         {
             _mBatch = new SpriteBatch(GraphicsDevice);
             _ninja = new Ninja.Ninja(GraphicsDevice);
+            _dwarf = new Dwarf.Dwarf(GraphicsDevice);
             _ninja.Animations.Fire(NinjaAnimation.Idle2);
             _mHealthBar = Content.Load<Texture2D>("HealthBar");
         }
@@ -46,15 +48,20 @@
             if (mKeys.IsKeyDown(Keys.PageUp))
             {
                 _ninja.CurrentHealth += 1;
+                _dwarf.CurrentHealth += 1;
+                _dwarf.Walking = true;
             }
 
             //If the Down Arrowis pressed, decrease the Health bar
             if (mKeys.IsKeyDown(Keys.PageDown))
             {
                 _ninja.CurrentHealth -= 1;
+                _dwarf.CurrentHealth -= 1;
+                _dwarf.Walking = false;
             }
 
             _ninja.Update(GamePad.GetState(PlayerIndex.One));
+            _dwarf.Update(GamePad.GetState(PlayerIndex.One));
 
             base.Update(gameTime);
         }
@@ -81,6 +88,20 @@
                                                                            GraphicsDevice.Viewport.Height, 1f, 10000);
 
             _ninja.Render(gameTime);
+
+
+            _dwarf.Effect.World = Matrix.CreateRotationY(_ninja.Rotation) *
+                                  Matrix.CreateTranslation(_ninja.Position + new Vector3(50,0,0));
+
+            _dwarf.Effect.View = Matrix.CreateLookAt(new Vector3(0f, 100f, -200),
+                                                     new Vector3(0, 50, 0),
+                                                     new Vector3(0, 1, 0));
+
+            _dwarf.Effect.Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45),
+                                                                           (float)GraphicsDevice.Viewport.Width /
+                                                                           GraphicsDevice.Viewport.Height, 1f, 10000);
+
+            _dwarf.Render(gameTime);
 
             RenderHealthBar();
 

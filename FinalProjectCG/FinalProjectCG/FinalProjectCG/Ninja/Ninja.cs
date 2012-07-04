@@ -19,6 +19,7 @@
         public Dictionary<NinjaAnimation, Tuple<int, int>> AnimationsRange;
         private int _currentHealth;
         private bool _walking;
+        public bool IsAttacking { get; set; }
 
         public Vector3 Position = Vector3.Zero;
         public float Rotation;
@@ -162,6 +163,7 @@
                 .Permit(NinjaAnimation.Idle2, NinjaAnimation.Idle2)
                 .OnEntry(() =>
                              {
+                                 IsAttacking = true;
                                  Velocity = 2;
                                  SetAnimation(NinjaAnimation.Overhead);
                              })
@@ -171,6 +173,7 @@
                 .Permit(NinjaAnimation.Idle2, NinjaAnimation.Idle2)
                 .OnEntry(() =>
                              {
+                                 IsAttacking = true;
                                  Velocity = 3;
                                  SetAnimation(NinjaAnimation.SpinningSword);
                              })
@@ -180,6 +183,7 @@
                 .Permit(NinjaAnimation.Idle2, NinjaAnimation.Idle2)
                 .OnEntry(() =>
                              {
+                                 IsAttacking = true;
                                  Velocity = 1.5f;
                                  SetAnimation(NinjaAnimation.ForwardKick);
                              });
@@ -188,6 +192,7 @@
                 .Permit(NinjaAnimation.Idle2, NinjaAnimation.Idle2)
                 .OnEntry(() =>
                              {
+                                 IsAttacking = true;
                                  Velocity = 1.5f;
                                  SetAnimation(NinjaAnimation.SideKick);
                              });
@@ -213,6 +218,7 @@
 
         private void ModelOnStoppedAnimation()
         {
+            IsAttacking = false;
             IsRunning = false;
 
             if (Animations.State == NinjaAnimation.Block)
