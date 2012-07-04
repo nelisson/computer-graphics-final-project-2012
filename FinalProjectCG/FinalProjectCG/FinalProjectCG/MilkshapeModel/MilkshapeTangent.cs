@@ -4,7 +4,7 @@ namespace FinalProjectCG.MilkshapeModel
 
     public class MilkshapeTangent
     {
-        public Vector3 tangentIn;
-        public Vector3 tangentOut;
+        public Vector3 TangentIn;
+        public Vector3 TangentOut;
     }
 }

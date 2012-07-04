@@ -1,7 +1,6 @@
 ﻿namespace FinalProjectCG.Utilities
 {
     using System.Collections.Generic;
-    using System.Reflection;
     using Microsoft.Xna.Framework.Input;
 
     public static class GamePadUtilities

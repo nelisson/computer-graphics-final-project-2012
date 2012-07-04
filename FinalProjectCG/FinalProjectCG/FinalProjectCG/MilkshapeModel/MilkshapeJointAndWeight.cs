@@ -2,13 +2,13 @@ namespace FinalProjectCG.MilkshapeModel
 {
     public class MilkshapeJointAndWeight
     {
-        public int[] jointIndices;
-        public int[] jointWeights;
+        public int[] JointIndices;
+        public int[] JointWeights;
 
         public MilkshapeJointAndWeight()
         {
-            jointIndices = new int[4];
-            jointWeights = new int[4];
+            JointIndices = new int[4];
+            JointWeights = new int[4];
         }
     }
 }

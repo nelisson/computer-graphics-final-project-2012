@@ -156,7 +156,6 @@
     <Compile Include="MilkshapeModel\MilkshapeTriangle.cs" />
     <Compile Include="MilkshapeModel\MilkshapeVertex.cs" />
     <Compile Include="MilkshapeModel\ShaderBatch.cs" />
-    <Compile Include="MilkshapeModel\ShaderRenderer.cs" />
     <Compile Include="Ninja\Transformation.cs" />
     <Compile Include="Ninja\Ninja.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
