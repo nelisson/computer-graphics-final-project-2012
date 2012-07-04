@@ -23,6 +23,8 @@
         Idle2,
         Idle3,
         GroundFront,
-        GroundBack
+        GroundBack,
+        Blocked,
+        ReverseBlock
     }
 }

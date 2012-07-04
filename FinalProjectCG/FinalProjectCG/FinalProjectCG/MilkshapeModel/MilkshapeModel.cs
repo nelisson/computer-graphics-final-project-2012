@@ -1080,13 +1080,28 @@ namespace FinalProjectCG.MilkshapeModel
                 handler();
         }
 
+        public bool Reverse { get; set; }
+
         public void advanceAnimation(float delta)
         {
-            currentTime += delta;
-
-            if (currentTime > animBoundMax)
+            if (Reverse)
             {
-                OnStoppedAnimation();
+                currentTime -= delta;
+
+                if (currentTime < animBoundMin)
+                {
+                    OnStoppedAnimation();
+                }
+            }
+            else
+            {
+
+                currentTime += delta;
+
+                if (currentTime > animBoundMax)
+                {
+                    OnStoppedAnimation();
+                }
             }
 
             //generam matricile
@@ -1122,17 +1137,42 @@ namespace FinalProjectCG.MilkshapeModel
                 }
         }
 
-       
+        public void setAnimBounds(float minFrame, float maxFrame, bool reverse)
+        {
+            //de completat aici
+            animBoundMin = minFrame;
+            animBoundMax = maxFrame;
+
+            Reverse = reverse;
+
+            if (reverse)
+            {
+                if ((currentTime < animBoundMin) || (currentTime > animBoundMax))
+                {
+                    currentTime = animBoundMax;
+                }
+            }
+            else
+            {
+                if ((currentTime < animBoundMin) || (currentTime > animBoundMax))
+                {
+                    currentTime = animBoundMin;
+                }    
+            }
+            
+        }
 
         public void setAnimBounds(float minFrame, float maxFrame)
         {
             //de completat aici
             animBoundMin = minFrame;
             animBoundMax = maxFrame;
+
             if ((currentTime < animBoundMin) || (currentTime > animBoundMax))
             {
                 currentTime = animBoundMin;
             }
+
         }
 
         private GraphicsDevice gd;
