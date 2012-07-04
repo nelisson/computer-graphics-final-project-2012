@@ -1,6 +1,5 @@
 ﻿namespace FinalProjectCG
 {
-    using System;
     using Microsoft.Xna.Framework;
     using Microsoft.Xna.Framework.Graphics;
     using Microsoft.Xna.Framework.Input;
@@ -57,40 +56,8 @@
 
             _ninja.Update(GamePad.GetState(PlayerIndex.One));
 
-            Vector2 leftStick = GamePad.GetState(PlayerIndex.One).ThumbSticks.Left;
-
-            if (mKeys.IsKeyDown(Keys.Down))
-            {
-                leftStick.Y = -1;
-            }
-            if (mKeys.IsKeyDown(Keys.Up))
-            {
-                leftStick.Y = 1;
-            }
-            if (mKeys.IsKeyDown(Keys.Left))
-            {
-                leftStick.X = -1;
-            }
-            if (mKeys.IsKeyDown(Keys.Right))
-            {
-                leftStick.X = 1;
-            }
-
-            leftStick.Normalize();
-            if ((leftStick.X >= 0 || leftStick.X <= 0) || (leftStick.Y >= 0 || leftStick.Y <= 0))
-            {
-                angle = (float)Math.Acos(-leftStick.Y);
-
-                if (leftStick.X < 0.0f)
-                    angle = -angle;
-            } 
-
-
-
             base.Update(gameTime);
         }
-
-        private float angle;
 
         /// <summary>
         ///   This is called when the game should draw itself.
@@ -102,9 +69,11 @@
 
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
-            _ninja.Effect.World = Matrix.CreateScale(10)*Matrix.CreateRotationY(angle);
+            _ninja.Effect.World = Matrix.CreateScale(10)*Matrix.CreateRotationY(_ninja.Rotation)*
+                                  Matrix.CreateTranslation(_ninja.Position);
 
-            _ninja.Effect.View = Matrix.CreateLookAt(new Vector3(0f, 100f, -200), new Vector3(0, 50, 0),
+            _ninja.Effect.View = Matrix.CreateLookAt(new Vector3(0f, 100f, -200),
+                                                     new Vector3(0, 50, 0),
                                                      new Vector3(0, 1, 0));
 
             _ninja.Effect.Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45),
