@@ -1137,7 +1137,7 @@ namespace FinalProjectCG.MilkshapeModel
                 }
         }
 
-        public void setAnimBounds(float minFrame, float maxFrame, bool reverse)
+        public void setAnimBounds(float minFrame, float maxFrame, bool reverse = false)
         {
             //de completat aici
             animBoundMin = minFrame;
@@ -1160,19 +1160,6 @@ namespace FinalProjectCG.MilkshapeModel
                 }    
             }
             
-        }
-
-        public void setAnimBounds(float minFrame, float maxFrame)
-        {
-            //de completat aici
-            animBoundMin = minFrame;
-            animBoundMax = maxFrame;
-
-            if ((currentTime < animBoundMin) || (currentTime > animBoundMax))
-            {
-                currentTime = animBoundMin;
-            }
-
         }
 
         private GraphicsDevice gd;
