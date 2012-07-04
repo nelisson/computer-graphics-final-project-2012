@@ -1,15 +1,15 @@
 namespace FinalProjectCG.MilkshapeModel
 {
-    public class MilkshapeMatrix3x4
+    public class MilkshapeMatrix3X4
     {
-        public float[][] v;
+        public float[][] V;
 
-        public MilkshapeMatrix3x4()
+        public MilkshapeMatrix3X4()
         {
-            v = new float[3][];
-            for (int i = 0; i < 3; i++)
+            V = new float[3][];
+            for (var i = 0; i < 3; i++)
             {
-                v[i] = new float[4];
+                V[i] = new float[4];
             }
         }
     }

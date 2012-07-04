@@ -2,7 +2,7 @@ namespace FinalProjectCG.MilkshapeModel
 {
     public class MilkshapeRotationKey
     {
-        public float time; //in secunde cu ,
-        public float[] rotation; //ungiurile pe X,Y,Z;
+        public float Time;
+        public float[] Rotation;
     }
 }

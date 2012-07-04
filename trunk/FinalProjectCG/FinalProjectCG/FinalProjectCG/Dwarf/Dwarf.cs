@@ -171,13 +171,13 @@
             if (animation != DwarfAnimation.Idle)
                 IsRunning = true;
 
-            Model.setAnimBounds(tuple.Item1, tuple.Item2, reverse);
+            Model.SetAnimBounds(tuple.Item1, tuple.Item2, reverse);
         }
 
         public void Render(GameTime gameTime)
         {
             Model.Render();
-            Model.advanceAnimation((float) gameTime.ElapsedGameTime.TotalMilliseconds/(100/Velocity));
+            Model.AdvanceAnimation((float) gameTime.ElapsedGameTime.TotalMilliseconds/(100/Velocity));
         }
 
         public void Update(GamePadState getState)
