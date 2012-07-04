@@ -15,27 +15,72 @@
         public float Velocity { get; set; }
         public bool IsRunning { get; set; }
 
+        public bool IsAlive
+        {
+            get { return CurrentHealth > 0; }
+        }
+
+        private int _currentHealth;
+
+        public int CurrentHealth
+        {
+            get { return _currentHealth; }
+            set { _currentHealth = (int) MathHelper.Clamp(value, 0, 100); }
+        }
+
         private readonly Dictionary<object, NinjaAnimation> _actions = new Dictionary<object, NinjaAnimation>();
 
-        public StateMachine<NinjaAnimation, NinjaAnimation> Animations = 
+        public StateMachine<NinjaAnimation, NinjaAnimation> Animations =
             new StateMachine<NinjaAnimation, NinjaAnimation>(NinjaAnimation.Idle2);
 
         public BasicEffect Effect
         {
             get { return Model.BasicEffect; }
-        } 
-        
+        }
+
         public Ninja(GraphicsDevice device)
         {
+            CurrentHealth = 100;
             _actions[Buttons.X] = NinjaAnimation.Overhead;
             _actions[Keys.X] = NinjaAnimation.Overhead;
 
-            Animations.Configure(NinjaAnimation.Idle2).Permit(NinjaAnimation.Overhead, NinjaAnimation.Overhead)
-                .OnEntry(() => { Velocity = 1; SetAnimation(NinjaAnimation.Idle2); })
+            Animations.Configure(NinjaAnimation.Idle2)
+                .Permit(NinjaAnimation.Overhead, NinjaAnimation.Overhead)
+                .OnEntry(() =>
+                             {
+                                 Velocity = 1;
+                                 SetAnimation(NinjaAnimation.Idle2);
+                             })
+                .Permit(NinjaAnimation.Death1, NinjaAnimation.Death1)
                 .PermitReentry(NinjaAnimation.Idle2);
-            
-            Animations.Configure(NinjaAnimation.Overhead).Permit(NinjaAnimation.Idle2, NinjaAnimation.Idle2)
-                .OnEntry(() => { Velocity = 2; SetAnimation(NinjaAnimation.Overhead); });
+
+            Animations.Configure(NinjaAnimation.Death1)
+                .OnEntry(() =>
+                             {
+                                 Velocity = 1;
+                                 SetAnimation(NinjaAnimation.Death1);
+                             })
+                .PermitReentry(NinjaAnimation.Death1)
+                .Permit(NinjaAnimation.Idle2, NinjaAnimation.Idle2)
+                .Permit(NinjaAnimation.GroundBack, NinjaAnimation.GroundBack);
+
+            Animations.Configure(NinjaAnimation.GroundBack)
+                .PermitReentry(NinjaAnimation.GroundBack)
+                .Permit(NinjaAnimation.Idle2, NinjaAnimation.Idle2)
+                .OnEntry(() =>
+                             {
+                                 Velocity = 1;
+                                 SetAnimation(NinjaAnimation.GroundBack);
+                             });
+
+            Animations.Configure(NinjaAnimation.Overhead)
+                .Permit(NinjaAnimation.Idle2, NinjaAnimation.Idle2)
+                .OnEntry(() =>
+                             {
+                                 Velocity = 2;
+                                 SetAnimation(NinjaAnimation.Overhead);
+                             })
+                .Permit(NinjaAnimation.Death1, NinjaAnimation.Death1);
 
             Velocity = 1;
             AnimationsRange = new Dictionary<NinjaAnimation, Tuple<int, int>>
@@ -55,11 +100,13 @@
                                       {NinjaAnimation.SpinningSword, new Tuple<int, int>(134, 145)},
                                       {NinjaAnimation.Backflip, new Tuple<int, int>(146, 158)},
                                       {NinjaAnimation.Climbwall, new Tuple<int, int>(159, 165)},
-                                      {NinjaAnimation.Death1, new Tuple<int, int>(166, 174)},
+                                      {NinjaAnimation.Death1, new Tuple<int, int>(166, 173)},
                                       {NinjaAnimation.Death2, new Tuple<int, int>(175, 183)},
                                       {NinjaAnimation.Idle1, new Tuple<int, int>(184, 204)},
                                       {NinjaAnimation.Idle2, new Tuple<int, int>(205, 250)},
-                                      {NinjaAnimation.Idle3, new Tuple<int, int>(251, 300)}
+                                      {NinjaAnimation.Idle3, new Tuple<int, int>(251, 300)},
+                                      {NinjaAnimation.GroundFront, new Tuple<int, int>(182, 182)},
+                                      {NinjaAnimation.GroundBack, new Tuple<int, int>(173, 173)}
                                   };
 
             Model = new MilkshapeModel.MilkshapeModel("Ninja\\ninja.ms3d", device);
@@ -70,14 +117,14 @@
         private void ModelOnStoppedAnimation()
         {
             IsRunning = false;
-            Animations.Fire(NinjaAnimation.Idle2);
+            Animations.Fire(IsAlive ? NinjaAnimation.Idle2 : NinjaAnimation.GroundBack);
         }
 
         public void SetAnimation(NinjaAnimation animation)
         {
             var tuple = AnimationsRange[animation];
 
-            if(animation != NinjaAnimation.Idle2)
+            if (animation != NinjaAnimation.Idle2)
                 IsRunning = true;
 
             Model.setAnimBounds(tuple.Item1, tuple.Item2);
@@ -86,16 +133,21 @@
         public void Render(GameTime gameTime)
         {
             Model.Render();
-            Model.advanceAnimation((float)gameTime.ElapsedGameTime.TotalMilliseconds / (100/Velocity));   
+            Model.advanceAnimation((float) gameTime.ElapsedGameTime.TotalMilliseconds/(100/Velocity));
         }
 
         public void SetTransformation(Transformation trans)
         {
-            Model.MaterialIndex = (short)trans;
+            Model.MaterialIndex = (short) trans;
         }
 
         public void Update(GamePadState getState)
         {
+            if (!IsAlive && Animations.State != NinjaAnimation.GroundBack)
+            {
+                Animations.Fire(NinjaAnimation.Death1);
+            }
+
             var lista = GamePadUtilities.GetPressed(getState);
 
             if (lista.Contains(Buttons.X))

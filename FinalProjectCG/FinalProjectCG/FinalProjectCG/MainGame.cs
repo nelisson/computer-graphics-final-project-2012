@@ -11,7 +11,8 @@
     public class MainGame : Game
     {
         private Ninja.Ninja _ninja;
-        SpriteBatch mBatch;
+        SpriteBatch _mBatch;
+        Texture2D _mHealthBar;
 
         public MainGame()
         {
@@ -25,8 +26,10 @@
         /// </summary>
         protected override void LoadContent()
         {
-            mBatch = new SpriteBatch(GraphicsDevice);
+            _mBatch = new SpriteBatch(GraphicsDevice);
             _ninja = new Ninja.Ninja(GraphicsDevice);
+            _ninja.Animations.Fire(NinjaAnimation.Idle2);
+            _mHealthBar = Content.Load<Texture2D>("HealthBar");
         }
 
         /// <summary>
@@ -40,6 +43,19 @@
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 Exit();
 
+            KeyboardState mKeys = Keyboard.GetState();
+
+            if (mKeys.IsKeyDown(Keys.Up))
+            {
+                _ninja.CurrentHealth += 1;
+            }
+
+            //If the Down Arrowis pressed, decrease the Health bar
+            if (mKeys.IsKeyDown(Keys.Down))
+            {
+                _ninja.CurrentHealth -= 1;
+            }
+
             _ninja.Update(GamePad.GetState(PlayerIndex.One));
 
             base.Update(gameTime);
@@ -52,6 +68,29 @@
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
+
+
+            _mBatch.Begin();
+
+            //Draw the negative space for the health bar
+
+            _mBatch.Draw(_mHealthBar, new Rectangle(Window.ClientBounds.Width / 2 - _mHealthBar.Width / 2,
+
+                 30, _mHealthBar.Width, 44), new Rectangle(0, 45, _mHealthBar.Width, 44), Color.Gray);
+
+            //Draw the current health level based on the current Health
+            _mBatch.Draw(_mHealthBar, new Rectangle(Window.ClientBounds.Width / 2 - _mHealthBar.Width / 2,
+                 30, (int)(_mHealthBar.Width * ((double)_ninja.CurrentHealth / 100)), 44),
+                 new Rectangle(0, 45, _mHealthBar.Width, 44), Color.Red);
+
+            //Draw the box around the health bar
+
+            _mBatch.Draw(_mHealthBar, new Rectangle(Window.ClientBounds.Width / 2 - _mHealthBar.Width / 2,
+
+                30, _mHealthBar.Width, 44), new Rectangle(0, 0, _mHealthBar.Width, 44), Color.White);
+
+            _mBatch.End();
+
 
             _ninja.Effect.Alpha = 1.0f;
             _ninja.Effect.DiffuseColor = new Vector3(5.0f, 5.0f, 5.0f);
