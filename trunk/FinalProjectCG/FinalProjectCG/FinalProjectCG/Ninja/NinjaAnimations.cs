@@ -21,6 +21,8 @@
         Death2,
         Idle1,
         Idle2,
-        Idle3
+        Idle3,
+        GroundFront,
+        GroundBack
     }
 }
