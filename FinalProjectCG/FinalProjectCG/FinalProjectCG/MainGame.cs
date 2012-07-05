@@ -81,7 +81,11 @@
 
             var p = _maze.begin.GridPosition;
 
-            _ninja.Position = new Vector3(p.X*_maze.unitX,p.Y*_maze.unitY,0);
+            var g = p.X*countX*3 + p.Y;
+
+            var v = _pathGraph.IndexToPosition(g);
+
+            _ninja.Position = new Vector3(v.X,v.Y,0);
 
             var grid = _maze.ToGrid();
 
