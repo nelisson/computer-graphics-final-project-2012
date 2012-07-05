@@ -352,9 +352,9 @@
             leftStick.Normalize();
             if ((leftStick.X >= 0 || leftStick.X <= 0) || (leftStick.Y >= 0 || leftStick.Y <= 0))
             {
-                Rotation = (float)Math.Acos(-leftStick.Y);
+                Rotation = (float)Math.Acos(leftStick.Y);
 
-                if (leftStick.X < 0.0f)
+                if (leftStick.X > 0.0f)
                     Rotation = -Rotation;
             }
 
@@ -362,8 +362,8 @@
             if (!(float.IsNaN(leftStick.X) || float.IsNaN(leftStick.Y)))
             {
                 // Rotate the model using the left thumbstick, and scale it down.
-                Position.X += -leftStick.X*1.5f;
-                Position.Z += leftStick.Y*1.5f;
+                Position.X += leftStick.X*0.1f;
+                Position.Y += leftStick.Y*0.1f;
             }
 
             if (keyboardState.IsKeyDown(Keys.A))

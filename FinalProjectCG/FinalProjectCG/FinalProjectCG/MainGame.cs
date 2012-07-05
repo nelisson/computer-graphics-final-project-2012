@@ -134,7 +134,7 @@
         /// <summary>
         ///   This is called when the game should draw itself.
         /// </summary>
-        void DrawGraph(GameTime gameTime)
+        void DrawGraph()
         {
             _primitiveBatch.Begin(_camera.View, _camera.Projection);
             {
@@ -178,8 +178,6 @@
                 }
             }
             _primitiveBatch.End();
-
-            base.Draw(gameTime);
         }
 
         /// <summary>
@@ -224,12 +222,12 @@
 
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
-            DrawGraph(gameTime);
-
+            DrawGraph();
+            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
             RenderNinja(gameTime);
-
+            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
             RenderDwarf(gameTime);
-
+            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
             RenderHealthBar();
 
             base.Draw(gameTime);
@@ -237,16 +235,12 @@
 
         private void RenderNinja(GameTime gameTime)
         {
-            _ninja.Effect.World = Matrix.CreateScale(10)*Matrix.CreateRotationY(_ninja.Rotation)*
+            _ninja.Effect.World = Matrix.CreateScale(0.5f)*Matrix.CreateRotationX(MathHelper.PiOver2)*Matrix.CreateRotationZ(_ninja.Rotation)*
                                   Matrix.CreateTranslation(_ninja.Position);
 
-            _ninja.Effect.View = Matrix.CreateLookAt(new Vector3(0f, 100f, -200),
-                                                     new Vector3(0, 50, 0),
-                                                     new Vector3(0, 1, 0));
+            _ninja.Effect.View = _camera.View;
 
-            _ninja.Effect.Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45),
-                                                                           (float) GraphicsDevice.Viewport.Width/
-                                                                           GraphicsDevice.Viewport.Height, 1f, 10000);
+            _ninja.Effect.Projection = _camera.Projection;
 
             _ninja.Render(gameTime);
         }
@@ -255,15 +249,12 @@
         {
             foreach (var dwarf in _dwarves)
             {
-                dwarf.Effect.World = Matrix.CreateTranslation(dwarf.Position);
+                dwarf.Effect.World = Matrix.CreateScale(0.05f) * Matrix.CreateRotationX(MathHelper.PiOver2) * Matrix.CreateRotationZ(dwarf.Rotation)
+                    *Matrix.CreateTranslation(dwarf.Position);
 
-                dwarf.Effect.View = Matrix.CreateLookAt(new Vector3(0f, 100f, -200),
-                                                         new Vector3(0, 50, 0),
-                                                         new Vector3(0, 1, 0));
+                dwarf.Effect.View = _camera.View;
 
-                dwarf.Effect.Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45),
-                                                                               (float)GraphicsDevice.Viewport.Width /
-                                                                               GraphicsDevice.Viewport.Height, 1f, 10000);
+                dwarf.Effect.Projection = _camera.Projection;
 
                 dwarf.Render(gameTime);
             }
