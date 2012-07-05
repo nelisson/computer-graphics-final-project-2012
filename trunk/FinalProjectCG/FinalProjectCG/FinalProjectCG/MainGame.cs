@@ -75,6 +75,12 @@
             _pathGraph = new PathGrid(gridPos, gridPos, widthHeight, widthHeight, countX, countY);
             _dwarf.PathGraph = _pathGraph;
 
+            _dwarf.BottomLimit = _pathGraph.Position;
+            _dwarf.TopLimit = _pathGraph.Position + _pathGraph.Size;
+
+            _ninja.BottomLimit = _pathGraph.Position;
+            _ninja.TopLimit = _pathGraph.Position + _pathGraph.Size;
+
             // Create some random obstacles
             //var random = new Random();
 
@@ -178,9 +184,9 @@
 
             KeyboardState mKeys = Keyboard.GetState();
 
-            if (mKeys.IsKeyDown(Keys.PageUp))
+            if (mKeys.IsKeyDown(Keys.PageUp) || GamePad.GetState(PlayerIndex.One).Buttons.LeftShoulder == ButtonState.Pressed)
             {
-                _ninja.CurrentHealth += 1;
+                _ninja.CurrentHealth = 100;
             }
 
             _ninja.Update(GamePad.GetState(PlayerIndex.One));
@@ -188,19 +194,39 @@
             _ninja.Index = _pathGraph.PositionToIndex(center.X, center.Y);
             _ninja.Update(GamePad.GetState(PlayerIndex.One));
 
-            _dwarf.Update(GamePad.GetState(PlayerIndex.One));
-            var c = _dwarf.Position;
-            _dwarf.Index = _pathGraph.PositionToIndex(c.X, c.Y);
-            _dwarf.Update(GamePad.GetState(PlayerIndex.One));
+            _dwarf.Update(GamePad.GetState(PlayerIndex.One), _ninja.Position, _ninja.IsAlive);
+
+
+            if (_ninja.IsAttacking && _ninja.Index == _dwarf.Index)
+            {
+                if(_dwarfCount == 0)
+                    _dwarf.CurrentHealth -= 1f*_ninja.AttackForce;
+
+                _dwarfCount++;
+
+                if (_dwarfCount > CountLimit)
+                    _dwarfCount = 0;
+            }
 
             //If the Down Arrowis pressed, decrease the Health bar
             if (_dwarf.IsAttacking && !_ninja.Blocked)
             {
-                _ninja.CurrentHealth -= 1;
+                if(_ninjaCount == 0)
+                    _ninja.CurrentHealth -= 1f;
+
+                _ninjaCount++;
+
+                if (_ninjaCount > CountLimit)
+                    _ninjaCount = 0;
             }
 
             base.Update(gameTime);
         }
+
+        private const int CountLimit = 10;
+
+        private int _ninjaCount;
+        private int _dwarfCount;
 
         /// <summary>
         ///   This is called when the game should draw itself.
@@ -258,21 +284,32 @@
             _mBatch.Begin();
 
             //Draw the negative space for the health bar
-
             _mBatch.Draw(_mHealthBar, new Rectangle(Window.ClientBounds.Width/2 - _mHealthBar.Width/2,
-                                                    30, _mHealthBar.Width/2, 44/2),
+                                                    10, _mHealthBar.Width/2, 44/2),
                          new Rectangle(0, 45, _mHealthBar.Width, 44), Color.Gray);
-
             //Draw the current health level based on the current Health
             _mBatch.Draw(_mHealthBar, new Rectangle(Window.ClientBounds.Width/2 - _mHealthBar.Width/2,
-                                                    30, (int) (_mHealthBar.Width*((double) _ninja.CurrentHealth/100))/2,
+                                                    10, (int) (_mHealthBar.Width*((double) _ninja.CurrentHealth/100))/2,
                                                     44/2),
                          new Rectangle(0, 45, _mHealthBar.Width, 44), Color.Red);
-
             //Draw the box around the health bar
-
             _mBatch.Draw(_mHealthBar, new Rectangle(Window.ClientBounds.Width/2 - _mHealthBar.Width/2,
-                                                    30, _mHealthBar.Width/2, 44/2),
+                                                    10, _mHealthBar.Width/2, 44/2),
+                         new Rectangle(0, 0, _mHealthBar.Width, 44), Color.White);
+
+
+
+            _mBatch.Draw(_mHealthBar, new Rectangle(Window.ClientBounds.Width / 2 - _mHealthBar.Width / 2,
+                                                    30, _mHealthBar.Width / 2, 44 / 2),
+                         new Rectangle(0, 45, _mHealthBar.Width, 44), Color.Gray);
+            //Draw the current health level based on the current Health
+            _mBatch.Draw(_mHealthBar, new Rectangle(Window.ClientBounds.Width / 2 - _mHealthBar.Width / 2,
+                                                    30, (int)(_mHealthBar.Width * ((double)_dwarf.CurrentHealth / 100)) / 2,
+                                                    44 / 2),
+                         new Rectangle(0, 45, _mHealthBar.Width, 44), Color.Red);
+            //Draw the box around the health bar
+            _mBatch.Draw(_mHealthBar, new Rectangle(Window.ClientBounds.Width / 2 - _mHealthBar.Width / 2,
+                                                    30, _mHealthBar.Width / 2, 44 / 2),
                          new Rectangle(0, 0, _mHealthBar.Width, 44), Color.White);
 
             _mBatch.End();
