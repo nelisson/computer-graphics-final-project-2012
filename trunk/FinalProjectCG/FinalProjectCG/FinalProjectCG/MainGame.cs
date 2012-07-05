@@ -58,24 +58,37 @@
 
             _primitiveBatch = new PrimitiveBatch(GraphicsDevice);
 
+            _ninja.IndexChanged += OnIndexChanged;
+
+            foreach (var dwarf in _dwarves)
+            {
+                dwarf.IndexChanged += OnIndexChanged;
+            }
+
             // Handle input events
             _input = new Input();
             _input.MouseDown += OnMouseDown;
 
 
             // Create a path graph
-            _pathGraph = new PathGrid(0, 0, 128, 128, 64, 64);
+            _pathGraph = new PathGrid(0, 0, 9, 9, 3, 3);
 
 
             // Create some random obstacles
             var random = new Random();
 
-            for (int i = 0; i < 800; i++)
+            for (int i = 0; i < 4; i++)
             {
                 _pathGraph.Mark(random.Next(_pathGraph.SegmentCountX),
                                random.Next(_pathGraph.SegmentCountY));
             }
 
+        }
+
+        private void OnIndexChanged()
+        {
+            _path.Clear();
+            _graphSearch.Search(_pathGraph, _dwarves[0].Index, _ninja.Index, _path);
         }
 
         /// <summary>
@@ -139,6 +152,27 @@
                 // Draw grid
                 _primitiveBatch.DrawGrid(_pathGraph, null, Color.Gray);
 
+                //Draw node where ninja is placed
+                {
+                    var p = _pathGraph.IndexToPosition(_ninja.Index);
+
+                    var center = new Vector3(p,0);
+
+                    _primitiveBatch.DrawSolidBox(new BoundingBox(center - new Vector3(1.5f, 1.5f, 0), center + new Vector3(1.5f, 1.5f, 0)), null, Color.IndianRed);
+                }
+
+                //Draw node where dwarf  is placed
+                {
+                    foreach (var dwarf in _dwarves)
+                    {
+                        var p = _pathGraph.IndexToPosition(dwarf.Index);
+
+                        var center = new Vector3(p, 0);
+
+                        _primitiveBatch.DrawSolidBox(new BoundingBox(center - new Vector3(1.5f, 1.5f, 0), center + new Vector3(1.5f, 1.5f, 0)), null, Color.Green);
+                    }
+                }
+
                 // Draw obstacles
                 for (int x = 0; x < _pathGraph.SegmentCountX; x++)
                 {
@@ -148,7 +182,7 @@
                         {
                             var center = new Vector3(_pathGraph.SegmentToPosition(x, y), 0);
 
-                            _primitiveBatch.DrawSolidBox(center, Vector3.One * 2, null, Color.Gold);
+                            _primitiveBatch.DrawSolidBox(center + new Vector3(0,0,1), Vector3.One * 2, null, Color.Gold);
                         }
                     }
                 }
@@ -204,7 +238,20 @@
 
             foreach (var dwarf in _dwarves)
             {
-                dwarf.Update(GamePad.GetState(PlayerIndex.One));    
+                dwarf.Update(GamePad.GetState(PlayerIndex.One));
+
+                var c = dwarf.Position;
+
+                dwarf.Index = _pathGraph.PositionToIndex(c.X, c.Y);
+            }
+
+            var center = _ninja.Position;
+
+            _ninja.Index = _pathGraph.PositionToIndex(center.X, center.Y);
+
+            if (mKeys.IsKeyDown(Keys.Y))
+            {
+                
             }
 
             base.Update(gameTime);
@@ -219,10 +266,9 @@
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
-
-            DrawGraph();
-            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
             RenderNinja(gameTime);
+            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+            DrawGraph();
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
             RenderDwarf(gameTime);
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
