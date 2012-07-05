@@ -1,7 +1,5 @@
 ﻿namespace FinalProjectCG
 {
-    using System;
-    using System.Collections.Generic;
     using Microsoft.Xna.Framework;
     using Microsoft.Xna.Framework.Graphics;
     using Microsoft.Xna.Framework.Input;
@@ -16,7 +14,7 @@
     /// </summary>
     public class MainGame : Game
     {
-        private readonly List<Dwarf.Dwarf> _dwarves = new List<Dwarf.Dwarf>();
+        private Dwarf.Dwarf _dwarf;
         private SpriteBatch _mBatch;
         private Texture2D _mHealthBar;
         private Ninja.Ninja _ninja;
@@ -26,8 +24,6 @@
         // An A* seach algorithm.
         private readonly GraphSearch _graphSearch = new GraphSearch();
 
-        // A list of nodes containing the result path.
-        private readonly List<int> _path = new List<int>();
         private PathGrid _pathGraph;
         private PrimitiveBatch _primitiveBatch;
 
@@ -57,7 +53,7 @@
         {
             _mBatch = new SpriteBatch(GraphicsDevice);
             _ninja = new Ninja.Ninja(GraphicsDevice);
-            _dwarves.Add(new Dwarf.Dwarf(GraphicsDevice));
+            _dwarf = new Dwarf.Dwarf(GraphicsDevice);
             _ninja.Animations.Fire(NinjaAnimation.Idle2);
             _mHealthBar = Content.Load<Texture2D>("HealthBar");
 
@@ -68,10 +64,7 @@
 
             _ninja.IndexChanged += OnIndexChanged;
 
-            foreach (var dwarf in _dwarves)
-            {
-                dwarf.IndexChanged += OnIndexChanged;
-            }
+            _dwarf.IndexChanged += OnIndexChanged;
 
             const int countX = 5;
             const int countY = 5;
@@ -80,7 +73,7 @@
             const int widthHeight = (countX*countY)/3;
             const float gridPos = -(widthHeight/2 + 0.5f);
             _pathGraph = new PathGrid(gridPos, gridPos, widthHeight, widthHeight, countX, countY);
-
+            _dwarf.PathGraph = _pathGraph;
 
             // Create some random obstacles
             //var random = new Random();
@@ -94,11 +87,14 @@
 
         private void OnIndexChanged()
         {
-            _path.Clear();
+            _dwarf.Path.Clear();
             if(_ninja.Index == 0)
-                _graphSearch.Search(_pathGraph, _ninja.Index,_dwarves[0].Index, _path);
+            {
+                _graphSearch.Search(_pathGraph, _ninja.Index, _dwarf.Index, _dwarf.Path);
+                _dwarf.Path.Reverse();
+            }
             else
-                _graphSearch.Search(_pathGraph, _dwarves[0].Index, _ninja.Index, _path);
+                _graphSearch.Search(_pathGraph, _dwarf.Index, _ninja.Index, _dwarf.Path);
         }
 
         /// <summary>
@@ -127,16 +123,14 @@
 
                 //Draw node where dwarf  is placed
                 {
-                    foreach (var dwarf in _dwarves)
-                    {
-                        var p = _pathGraph.IndexToPosition(dwarf.Index);
+                    
+                    var p = _pathGraph.IndexToPosition(_dwarf.Index);
 
-                        var center = new Vector3(p, 0);
+                    var center = new Vector3(p, 0);
 
-                        _primitiveBatch.DrawSolidBox(
-                            new BoundingBox(center - new Vector3(xSize, ySize, 0), center + new Vector3(xSize, ySize, 0)),
-                            null, Color.IndianRed);
-                    }
+                    _primitiveBatch.DrawSolidBox(
+                        new BoundingBox(center - new Vector3(xSize, ySize, 0), center + new Vector3(xSize, ySize, 0)),
+                        null, Color.IndianRed);
                 }
 
                 // Draw obstacles
@@ -154,17 +148,17 @@
                 }
 
                 // Draw path
-                for (int i = 0; i < _path.Count - 1; i++)
+                for (int i = 0; i < _dwarf.Path.Count - 1; i++)
                 {
                     var point1 =
                         new Vector3(
-                            _pathGraph.SegmentToPosition(_path[i]%_pathGraph.SegmentCountX,
-                                                         _path[i]/_pathGraph.SegmentCountX),
+                            _pathGraph.SegmentToPosition(_dwarf.Path[i] % _pathGraph.SegmentCountX,
+                                                         _dwarf.Path[i] / _pathGraph.SegmentCountX),
                             0);
                     var point2 =
                         new Vector3(
-                            _pathGraph.SegmentToPosition(_path[i + 1]%_pathGraph.SegmentCountX,
-                                                         _path[i + 1]/_pathGraph.SegmentCountX), 0);
+                            _pathGraph.SegmentToPosition(_dwarf.Path[i + 1] % _pathGraph.SegmentCountX,
+                                                         _dwarf.Path[i + 1] / _pathGraph.SegmentCountX), 0);
 
                     _primitiveBatch.DrawLine(point1, point2, null, Color.White);
                 }
@@ -189,28 +183,20 @@
                 _ninja.CurrentHealth += 1;
             }
 
-            //If the Down Arrowis pressed, decrease the Health bar
-            if (mKeys.IsKeyDown(Keys.PageDown))
-            {
-                _ninja.CurrentHealth -= 1;
-            }
+            _ninja.Update(GamePad.GetState(PlayerIndex.One));
+            var center = _ninja.Position;
+            _ninja.Index = _pathGraph.PositionToIndex(center.X, center.Y);
             _ninja.Update(GamePad.GetState(PlayerIndex.One));
 
-            foreach (var dwarf in _dwarves)
+            _dwarf.Update(GamePad.GetState(PlayerIndex.One));
+            var c = _dwarf.Position;
+            _dwarf.Index = _pathGraph.PositionToIndex(c.X, c.Y);
+            _dwarf.Update(GamePad.GetState(PlayerIndex.One));
+
+            //If the Down Arrowis pressed, decrease the Health bar
+            if (_dwarf.IsAttacking && !_ninja.Blocked)
             {
-                dwarf.Update(GamePad.GetState(PlayerIndex.One));
-
-                var c = dwarf.Position;
-
-                dwarf.Index = _pathGraph.PositionToIndex(c.X, c.Y);
-            }
-
-            var center = _ninja.Position;
-
-            _ninja.Index = _pathGraph.PositionToIndex(center.X, center.Y);
-
-            if (mKeys.IsKeyDown(Keys.Y))
-            {
+                _ninja.CurrentHealth -= 1;
             }
 
             base.Update(gameTime);
@@ -256,18 +242,15 @@
 
         private void RenderDwarf(GameTime gameTime)
         {
-            foreach (var dwarf in _dwarves)
-            {
-                dwarf.Effect.World = Matrix.CreateScale(0.025f)*Matrix.CreateRotationX(MathHelper.PiOver2)*
-                                     Matrix.CreateRotationZ(dwarf.Rotation)
-                                     *Matrix.CreateTranslation(dwarf.Position);
+            _dwarf.Effect.World = Matrix.CreateScale(0.025f)*Matrix.CreateRotationX(MathHelper.PiOver2)*
+                                  Matrix.CreateRotationZ(_dwarf.Rotation)
+                                  *Matrix.CreateTranslation(_dwarf.Position);
 
-                dwarf.Effect.View = _ninja.Effect.View;
+            _dwarf.Effect.View = _ninja.Effect.View;
 
-                dwarf.Effect.Projection = _ninja.Effect.Projection;
+            _dwarf.Effect.Projection = _ninja.Effect.Projection;
 
-                dwarf.Render(gameTime);
-            }
+            _dwarf.Render(gameTime);
         }
 
         private void RenderHealthBar()

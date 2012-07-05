@@ -2,10 +2,12 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using Microsoft.Xna.Framework;
     using Microsoft.Xna.Framework.Graphics;
     using Microsoft.Xna.Framework.Input;
     using MilkshapeModel;
+    using Nine.Navigation;
     using Stateless;
     using Utilities;
 
@@ -13,6 +15,10 @@
     {
         public StateMachine<DwarfAnimation, DwarfAnimation> Animations =
             new StateMachine<DwarfAnimation, DwarfAnimation>(DwarfAnimation.Idle);
+
+        public readonly List<int> Path = new List<int>();
+
+        public PathGrid PathGraph;
 
         private int _index;
         public int Index
@@ -154,6 +160,9 @@
 
             Animations.Configure(DwarfAnimation.Attack)
                 .Permit(DwarfAnimation.Idle, DwarfAnimation.Idle)
+                .Permit(DwarfAnimation.Walk, DwarfAnimation.Walk)
+                .Permit(DwarfAnimation.Run, DwarfAnimation.Run)
+                .PermitReentry(DwarfAnimation.Attack)
                 .OnEntry(() =>
                              {
                                  IsAttacking = true;
@@ -164,6 +173,9 @@
 
             Animations.Configure(DwarfAnimation.Stab)
                 .Permit(DwarfAnimation.Idle, DwarfAnimation.Idle)
+                .PermitReentry(DwarfAnimation.Stab)
+                .Permit(DwarfAnimation.Walk, DwarfAnimation.Walk)
+                .Permit(DwarfAnimation.Run, DwarfAnimation.Run)
                 .OnEntry(() =>
                              {
                                  IsAttacking = true;
@@ -182,7 +194,10 @@
             if (Walking)
             {
                 IsRunning = true;
-                Animations.Fire(IsAlive ? Animations.State : DwarfAnimation.Ground);
+                if(Animations.State != DwarfAnimation.Run || Animations.State != DwarfAnimation.Walk)
+                    Animations.Fire(new Random().Next(2) == 0 ? DwarfAnimation.Walk : DwarfAnimation.Run);
+                else
+                    Animations.Fire(IsAlive ? Animations.State : DwarfAnimation.Ground);
             }
             else
             {
@@ -220,15 +235,36 @@
 
         public void Update(GamePadState getState)
         {
-            var keyboardState = Keyboard.GetState(PlayerIndex.One);
-            var lista = GamePadUtilities.GetPressed(getState);
-
-            // In case you get lost, press A to warp back to the center.
-            if (lista.Contains(Buttons.Start))
+            Vector3 direction = Vector3.Zero;
+            if (Path.Count > 1)
             {
-                Position = Vector3.Zero;
-                Rotation = 0.0f;
+                var point1 =
+                    new Vector3(
+                        PathGraph.SegmentToPosition(Path[Path.Count - 1] % PathGraph.SegmentCountX,
+                                                    Path[Path.Count-1]/ PathGraph.SegmentCountX),
+                        0);
+                var point2 =
+                    new Vector3(
+                        PathGraph.SegmentToPosition(Path[Path.Count-2]%PathGraph.SegmentCountX,
+                                                    Path[Path.Count - 2] / PathGraph.SegmentCountX), 0);
+
+                direction = point2 - point1;
+                direction.Normalize();
+
+                Rotation = (float)Math.Acos(direction.Y);
+
+                if (direction.X > 0.0f)
+                    Rotation = -Rotation;
+
+                Walking = true;
             }
+            else
+            {
+                Walking = false;
+                if(!IsRunning)
+                    Animations.Fire(new Random().Next(2) == 0 ? DwarfAnimation.Attack : DwarfAnimation.Stab);
+            }
+
 
             // Find out what direction we should be thrusting, using rotation.
 
@@ -240,6 +276,7 @@
 
             if (Walking)
             {
+                Position += (direction * (Animations.State == DwarfAnimation.Walk ? 0.01f : 0.03f));
                 if (!IsRunning && Animations.State == DwarfAnimation.Idle
                     && Animations.State != DwarfAnimation.Die)
                 {
@@ -255,14 +292,6 @@
                     Animations.Fire(DwarfAnimation.Idle);
                 }
             }
-
-            if (lista.Contains(Buttons.X) || keyboardState.IsKeyDown(Keys.X))
-                if (!IsRunning && Animations.State == DwarfAnimation.Idle)
-                    Animations.Fire(DwarfAnimation.Attack);
-
-            if (lista.Contains(Buttons.A) || keyboardState.IsKeyDown(Keys.Z))
-                if (!IsRunning && Animations.State == DwarfAnimation.Idle)
-                    Animations.Fire(DwarfAnimation.Stab);
         }
     }
 }
