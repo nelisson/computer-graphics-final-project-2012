@@ -9,6 +9,8 @@
     using Nine.Graphics;
     using Nine.Navigation;
     using Ninja;
+    using System;
+    using System.Collections.Generic;
 
     /// <summary>
     ///   This is the main type for your game
@@ -34,21 +36,23 @@
 
         public MainGame()
         {
-            new GraphicsDeviceManager(this);
+            new GraphicsDeviceManager(this)
             
             //FullScreen
                 //{
                 //    PreferredBackBufferWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width,
                 //    PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height,
                 //    IsFullScreen = true
-                //};
+                //}
+                ;
 
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
         }
 
         private Maze _maze;
-
+        const int countX = 5;
+        const int countY = 5;
         /// <summary>
         ///   LoadContent will be called once per game and is the place to load all of your content.
         /// </summary>
@@ -69,19 +73,18 @@
 
             _dwarf.IndexChanged += OnIndexChanged;
 
-            const int countX = 3;
-            const int countY = 3;
+            
 
             // Create a path graph
-            const int widthHeight = countX*countY*3;
+            const int widthHeight = countX*countY;
             _pathGraph = new PathGrid(0, 0, widthHeight, widthHeight, countX*3, countY*3);
 
             _maze = new Maze(countX,countY);
             _maze.Generate(countX,countY,Maze.GenerateMethod.DepthFirstSearch);
+            
+            var p = _maze.Entry;
 
-            var p = _maze.begin.GridPosition;
-
-            var g = p.X*countX*3 + p.Y;
+            var g = p.X * countX * 3 + p.Y;
 
             var v = _pathGraph.IndexToPosition(g);
 
@@ -89,16 +92,34 @@
 
             var grid = _maze.ToGrid();
 
+            var validos = new List<Tuple<int, int>>();
+
             for (var i = 0; i < grid.GetLength(0); i++)
             {
                 for (var j = 0; j < grid.GetLength(1); j++)
                 {
-                    if(grid[i,j])
-                        _pathGraph.Mark(i,j);
+                    if (grid[i, j])
+                        _pathGraph.Mark(i, j);
+                    else
+                        validos.Add(Tuple.Create(i,j));
                 }    
             }
-
             _dwarf.PathGraph = _pathGraph;
+            var r = new Random();
+
+            var cubo = r.Next(validos.Count);
+
+            p = new Point(validos[cubo].Item1, validos[cubo].Item2);
+
+            g = p.X * countX * 3 + p.Y;
+
+            v = _pathGraph.IndexToPosition(g);
+
+            _dwarf.Position = new Vector3(v.X, v.Y, 0);
+
+
+
+            
 
             _dwarf.BottomLimit = _pathGraph.Position;
             _dwarf.TopLimit = _pathGraph.Position + _pathGraph.Size;
@@ -109,6 +130,9 @@
 
         private void OnIndexChanged()
         {
+            if (_ninja.Index == (_maze.Exit.X * countX * 3 + _maze.Exit.Y))
+                Exit();
+
             _dwarf.Path.Clear();
             if(_ninja.Index == 0)
             {
@@ -129,8 +153,29 @@
                 // Draw grid
                 _primitiveBatch.DrawGrid(_pathGraph, null, Color.Gray);
 
-                var xSize = _pathGraph.Size.X/_pathGraph.SegmentCountX/2;
-                var ySize = _pathGraph.Size.Y/_pathGraph.SegmentCountY/2;
+                var xSize = _pathGraph.Size.X / _pathGraph.SegmentCountX / 2;
+                var ySize = _pathGraph.Size.Y / _pathGraph.SegmentCountY / 2;
+                //Exit
+                {
+                    var center = new Vector3(_maze.Exit.X, _maze.Exit.Y, 0);
+                    var g = center.X * countX * 3 + center.Y;
+                    var p = _pathGraph.IndexToPosition((int)g);
+                    center = new Vector3(p, 0);
+
+                    _primitiveBatch.DrawSolidBox(
+                        new BoundingBox(center - new Vector3(xSize, ySize, 0), center + new Vector3(xSize, ySize, 0)),
+                        null, Color.White);
+
+                    var entry = new Vector3(_maze.Entry.X, _maze.Entry.Y, 0);
+                    var index = (int)(entry.X * countX * 3 + entry.Y);
+                    var pos = _pathGraph.IndexToPosition(index);
+                    center = new Vector3(pos, 0);
+
+                    _primitiveBatch.DrawSolidBox(
+                        new BoundingBox(center - new Vector3(xSize, ySize, 0), center + new Vector3(xSize, ySize, 0)),
+                        null, Color.Black);
+                }
+#if DEBUG
 
                 //Draw node where ninja is placed
                 {
@@ -143,9 +188,11 @@
                         null, Color.Green);
                 }
 
+                
+
                 //Draw node where dwarf  is placed
                 {
-                    
+
                     var p = _pathGraph.IndexToPosition(_dwarf.Index);
 
                     var center = new Vector3(p, 0);
@@ -155,6 +202,23 @@
                         null, Color.IndianRed);
                 }
 
+                
+                 // Draw path
+                for (int i = 0; i < _dwarf.Path.Count - 1; i++)
+                {
+                    var point1 =
+                        new Vector3(
+                            _pathGraph.SegmentToPosition(_dwarf.Path[i] % _pathGraph.SegmentCountX,
+                                                         _dwarf.Path[i] / _pathGraph.SegmentCountX),
+                            0);
+                    var point2 =
+                        new Vector3(
+                            _pathGraph.SegmentToPosition(_dwarf.Path[i + 1] % _pathGraph.SegmentCountX,
+                                                         _dwarf.Path[i + 1] / _pathGraph.SegmentCountX), 0);
+
+                    _primitiveBatch.DrawLine(point1, point2, null, Color.White);
+                }
+#endif
                 // Draw obstacles
                 for (int x = 0; x < _pathGraph.SegmentCountX; x++)
                 {
@@ -172,21 +236,7 @@
                     }
                 }
 
-                // Draw path
-                for (int i = 0; i < _dwarf.Path.Count - 1; i++)
-                {
-                    var point1 =
-                        new Vector3(
-                            _pathGraph.SegmentToPosition(_dwarf.Path[i] % _pathGraph.SegmentCountX,
-                                                         _dwarf.Path[i] / _pathGraph.SegmentCountX),
-                            0);
-                    var point2 =
-                        new Vector3(
-                            _pathGraph.SegmentToPosition(_dwarf.Path[i + 1] % _pathGraph.SegmentCountX,
-                                                         _dwarf.Path[i + 1] / _pathGraph.SegmentCountX), 0);
-
-                    _primitiveBatch.DrawLine(point1, point2, null, Color.White);
-                }
+               
             }
             _primitiveBatch.End();
         }
@@ -259,9 +309,9 @@
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
             RenderNinja(gameTime);
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
-            DrawGraph();
-            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
             RenderDwarf(gameTime);
+            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+            DrawGraph();            
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
             RenderHealthBar();
 

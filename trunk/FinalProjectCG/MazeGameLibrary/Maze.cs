@@ -15,12 +15,64 @@
         /// <summary>
         ///   Indicates the maze begin
         /// </summary>
-        public Cell begin;
+        private Cell begin;
+
+        public Point Entry
+        {
+            get
+            {
+                var p = begin.GridPosition;
+
+                var aux = p.X;
+                p.X = p.Y;
+                p.Y = aux;
+
+                if (!begin.DownWall && p.Y == height*3 - 2)
+                    p.Y++;
+
+                if (!begin.UpWall && p.Y == 1)
+                    p.Y--;
+
+                if (!begin.LeftWall && p.X == 1)
+                    p.X--;
+
+                if (!begin.RightWall && p.X == width*3 - 2)
+                    p.Y++;
+
+                return p;
+            }
+        }
+
+        public Point Exit
+        {
+            get
+            {
+                var p = end.GridPosition;
+
+                var aux = p.X;
+                p.X = p.Y;
+                p.Y = aux;
+
+                if (!end.DownWall && p.Y == height * 3 - 2)
+                    p.Y++;
+
+                if (!end.UpWall && p.Y == 1)
+                    p.Y--;
+
+                if (!end.LeftWall && p.X == 1)
+                    p.X--;
+
+                if (!end.RightWall && p.X == width * 3 - 2)
+                    p.X++;
+                                
+                return p;
+            }
+        }
 
         /// <summary>
         ///   Indicates the maze end
         /// </summary>
-        public Cell end;
+        private Cell end;
 
         /// <summary>
         ///   Used to draw the found path
