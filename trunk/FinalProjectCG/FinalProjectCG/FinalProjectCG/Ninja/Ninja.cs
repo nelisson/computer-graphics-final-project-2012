@@ -362,8 +362,8 @@
             if (!(float.IsNaN(leftStick.X) || float.IsNaN(leftStick.Y)))
             {
                 // Rotate the model using the left thumbstick, and scale it down.
-                Position.X += leftStick.X*0.1f;
-                Position.Y += leftStick.Y*0.1f;
+                Position.X += leftStick.X*0.05f;
+                Position.Y += leftStick.Y*0.05f;
             }
 
             if (keyboardState.IsKeyDown(Keys.A))
