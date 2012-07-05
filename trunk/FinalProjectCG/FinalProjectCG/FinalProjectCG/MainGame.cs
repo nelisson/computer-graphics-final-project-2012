@@ -71,7 +71,9 @@
 
 
             // Create a path graph
-            _pathGraph = new PathGrid(0, 0, 9, 9, 3, 3);
+            int width_height = 9;
+            float grid_pos = -(width_height / 2 + 0.5f);
+            _pathGraph = new PathGrid(grid_pos, grid_pos, width_height, width_height, 3, 3);
 
 
             // Create some random obstacles
@@ -180,9 +182,9 @@
                     {
                         if (_pathGraph.IsMarked(x, y))
                         {
-                            var center = new Vector3(_pathGraph.SegmentToPosition(x, y), 0);
+                            var center = new Vector3(_pathGraph.SegmentToPosition(x, y), 1);
 
-                            _primitiveBatch.DrawSolidBox(center + new Vector3(0,0,1), Vector3.One * 2, null, Color.Gold);
+                            _primitiveBatch.DrawSolidBox(center, Vector3.One * 2, null, Color.Gold);
                         }
                     }
                 }
