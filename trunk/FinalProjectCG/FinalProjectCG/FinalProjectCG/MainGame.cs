@@ -22,22 +22,30 @@
         private Ninja.Ninja _ninja;
 
         #region Nine
+
         // An A* seach algorithm.
         private readonly GraphSearch _graphSearch = new GraphSearch();
 
         // A list of nodes containing the result path.
         private readonly List<int> _path = new List<int>();
-        private Input _input;
         private PathGrid _pathGraph;
         private PrimitiveBatch _primitiveBatch;
 
         // Start node of the path.
-        private int? _start;
+
         #endregion
 
         public MainGame()
         {
             new GraphicsDeviceManager(this);
+            
+            //FullScreen
+                //{
+                //    PreferredBackBufferWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width,
+                //    PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height,
+                //    IsFullScreen = true
+                //};
+
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
         }
@@ -65,102 +73,56 @@
                 dwarf.IndexChanged += OnIndexChanged;
             }
 
-            // Handle input events
-            _input = new Input();
-            _input.MouseDown += OnMouseDown;
-
+            const int countX = 5;
+            const int countY = 5;
 
             // Create a path graph
-            int width_height = 9;
-            float grid_pos = -(width_height / 2 + 0.5f);
-            _pathGraph = new PathGrid(grid_pos, grid_pos, width_height, width_height, 3, 3);
+            const int widthHeight = (countX*countY)/3;
+            const float gridPos = -(widthHeight/2 + 0.5f);
+            _pathGraph = new PathGrid(gridPos, gridPos, widthHeight, widthHeight, countX, countY);
 
 
             // Create some random obstacles
-            var random = new Random();
+            //var random = new Random();
 
-            for (int i = 0; i < 4; i++)
-            {
-                _pathGraph.Mark(random.Next(_pathGraph.SegmentCountX),
-                               random.Next(_pathGraph.SegmentCountY));
-            }
-
+            //for (int i = 0; i < 4; i++)
+            //{
+            //    _pathGraph.Mark(random.Next(_pathGraph.SegmentCountX),
+            //                    random.Next(_pathGraph.SegmentCountY));
+            //}
         }
 
         private void OnIndexChanged()
         {
             _path.Clear();
-            _graphSearch.Search(_pathGraph, _dwarves[0].Index, _ninja.Index, _path);
-        }
-
-        /// <summary>
-        ///   Handle mouse down event.
-        /// </summary>
-        private void OnMouseDown(object sender, MouseEventArgs e)
-        {
-            if (e.Button == MouseButtons.Left)
-            {
-                if (!_start.HasValue)
-                {
-                    // Get start path graph node.
-                    _start = GetPickedNode(e.X, e.Y);
-                    _path.Clear();
-                }
-                else
-                {
-                    int? end = GetPickedNode(e.X, e.Y);
-
-                    if (end.HasValue)
-                    {
-                        // Search from start to end.
-                        // NOTE: the path return from A* search is from end to start.
-                        _path.Clear();
-                        _graphSearch.Search(_pathGraph, _start.Value, end.Value, _path);
-                        _start = null;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        ///   Helper method to get picked path graph node from screen coordinates.
-        /// </summary>
-        private int? GetPickedNode(int x, int y)
-        {
-            // Gets the pick ray from current mouse cursor
-            Ray ray = GraphicsDevice.Viewport.CreatePickRay(x, y, _ninja.Effect.View, _ninja.Effect.Projection);
-            // Test ray against ground plane
-            float? distance = ray.Intersects(new Plane(Vector3.UnitZ, 0));
-
-            if (distance.HasValue)
-            {
-                Vector3 target = ray.Position + ray.Direction * distance.Value;
-
-                // Make sure we don't pick an obstacle.
-                if (!_pathGraph.IsMarked(target.X, target.Y))
-                    return _pathGraph.PositionToIndex(target.X, target.Y);
-            }
-
-            return null;
+            if(_ninja.Index == 0)
+                _graphSearch.Search(_pathGraph, _ninja.Index,_dwarves[0].Index, _path);
+            else
+                _graphSearch.Search(_pathGraph, _dwarves[0].Index, _ninja.Index, _path);
         }
 
         /// <summary>
         ///   This is called when the game should draw itself.
         /// </summary>
-        void DrawGraph()
+        private void DrawGraph()
         {
             _primitiveBatch.Begin(_ninja.Effect.View, _ninja.Effect.Projection);
             {
                 // Draw grid
                 _primitiveBatch.DrawGrid(_pathGraph, null, Color.Gray);
 
+                var xSize = _pathGraph.Size.X/_pathGraph.SegmentCountX/2;
+                var ySize = _pathGraph.Size.Y/_pathGraph.SegmentCountY/2;
+
                 //Draw node where ninja is placed
                 {
                     var p = _pathGraph.IndexToPosition(_ninja.Index);
 
-                    var center = new Vector3(p,0);
+                    var center = new Vector3(p, 0);
 
-                    _primitiveBatch.DrawSolidBox(new BoundingBox(center - new Vector3(1.5f, 1.5f, 0), center + new Vector3(1.5f, 1.5f, 0)), null, Color.IndianRed);
+                    _primitiveBatch.DrawSolidBox(
+                        new BoundingBox(center - new Vector3(xSize, ySize, 0), center + new Vector3(xSize, ySize, 0)),
+                        null, Color.Green);
                 }
 
                 //Draw node where dwarf  is placed
@@ -171,7 +133,9 @@
 
                         var center = new Vector3(p, 0);
 
-                        _primitiveBatch.DrawSolidBox(new BoundingBox(center - new Vector3(1.5f, 1.5f, 0), center + new Vector3(1.5f, 1.5f, 0)), null, Color.Green);
+                        _primitiveBatch.DrawSolidBox(
+                            new BoundingBox(center - new Vector3(xSize, ySize, 0), center + new Vector3(xSize, ySize, 0)),
+                            null, Color.IndianRed);
                     }
                 }
 
@@ -182,18 +146,11 @@
                     {
                         if (_pathGraph.IsMarked(x, y))
                         {
-                            var center = new Vector3(_pathGraph.SegmentToPosition(x, y), 1);
+                            var center = new Vector3(_pathGraph.SegmentToPosition(x, y),0.5f);
 
-                            _primitiveBatch.DrawSolidBox(center, Vector3.One * 2, null, Color.Gold);
+                            _primitiveBatch.DrawSolidBox(center, Vector3.One*xSize, null, Color.Gold);
                         }
                     }
-                }
-
-                // Draw start node
-                if (_start.HasValue)
-                {
-                    _primitiveBatch.DrawSolidSphere(new Vector3(_pathGraph.IndexToPosition(_start.Value), 0), 0.5f, 4, null,
-                                                   Color.Honeydew);
                 }
 
                 // Draw path
@@ -201,12 +158,13 @@
                 {
                     var point1 =
                         new Vector3(
-                            _pathGraph.SegmentToPosition(_path[i] % _pathGraph.SegmentCountX, _path[i] / _pathGraph.SegmentCountX),
+                            _pathGraph.SegmentToPosition(_path[i]%_pathGraph.SegmentCountX,
+                                                         _path[i]/_pathGraph.SegmentCountX),
                             0);
                     var point2 =
                         new Vector3(
-                            _pathGraph.SegmentToPosition(_path[i + 1] % _pathGraph.SegmentCountX,
-                                                        _path[i + 1] / _pathGraph.SegmentCountX), 0);
+                            _pathGraph.SegmentToPosition(_path[i + 1]%_pathGraph.SegmentCountX,
+                                                         _path[i + 1]/_pathGraph.SegmentCountX), 0);
 
                     _primitiveBatch.DrawLine(point1, point2, null, Color.White);
                 }
@@ -253,7 +211,6 @@
 
             if (mKeys.IsKeyDown(Keys.Y))
             {
-                
             }
 
             base.Update(gameTime);
@@ -281,7 +238,8 @@
 
         private void RenderNinja(GameTime gameTime)
         {
-            _ninja.Effect.World = Matrix.CreateScale(0.2f)*Matrix.CreateRotationX(MathHelper.PiOver2)*Matrix.CreateRotationZ(_ninja.Rotation)*
+            _ninja.Effect.World = Matrix.CreateScale(0.2f)*Matrix.CreateRotationX(MathHelper.PiOver2)*
+                                  Matrix.CreateRotationZ(_ninja.Rotation)*
                                   Matrix.CreateTranslation(_ninja.Position);
 
             _ninja.Effect.View = Matrix.CreateLookAt(_ninja.Position + new Vector3(0f, -5, 4),
@@ -291,7 +249,7 @@
             _ninja.Effect.Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45),
                                                                            (float) GraphicsDevice.Viewport.Width/
                                                                            GraphicsDevice.Viewport.Height, 1f, 10000);
-             
+
 
             _ninja.Render(gameTime);
         }
@@ -300,8 +258,9 @@
         {
             foreach (var dwarf in _dwarves)
             {
-                dwarf.Effect.World = Matrix.CreateScale(0.025f) * Matrix.CreateRotationX(MathHelper.PiOver2) * Matrix.CreateRotationZ(dwarf.Rotation)
-                    *Matrix.CreateTranslation(dwarf.Position);
+                dwarf.Effect.World = Matrix.CreateScale(0.025f)*Matrix.CreateRotationX(MathHelper.PiOver2)*
+                                     Matrix.CreateRotationZ(dwarf.Rotation)
+                                     *Matrix.CreateTranslation(dwarf.Position);
 
                 dwarf.Effect.View = _ninja.Effect.View;
 
