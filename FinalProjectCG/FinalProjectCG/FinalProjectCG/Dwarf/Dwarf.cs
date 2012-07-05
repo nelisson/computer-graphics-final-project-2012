@@ -311,7 +311,7 @@
 
             if (Walking && IsAlive)
             {
-                Position += (direction * (Animations.State == DwarfAnimation.Walk ? 0.01f : 0.03f));
+                Position += (direction * (Animations.State == DwarfAnimation.Walk ? 0.03f : 0.05f));
 
                 _position.X = MathHelper.Clamp(Position.X, BottomLimit.X, TopLimit.X);
                 _position.Y = MathHelper.Clamp(Position.Y, BottomLimit.Y, TopLimit.Y);

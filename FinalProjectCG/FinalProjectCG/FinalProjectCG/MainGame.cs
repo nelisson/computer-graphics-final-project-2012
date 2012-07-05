@@ -1,5 +1,6 @@
 ﻿namespace FinalProjectCG
 {
+    using MazeGameLibrary;
     using Microsoft.Xna.Framework;
     using Microsoft.Xna.Framework.Graphics;
     using Microsoft.Xna.Framework.Input;
@@ -46,6 +47,8 @@
             IsMouseVisible = true;
         }
 
+        private Maze _maze;
+
         /// <summary>
         ///   LoadContent will be called once per game and is the place to load all of your content.
         /// </summary>
@@ -66,13 +69,31 @@
 
             _dwarf.IndexChanged += OnIndexChanged;
 
-            const int countX = 5;
-            const int countY = 5;
+            const int countX = 3;
+            const int countY = 3;
 
             // Create a path graph
-            const int widthHeight = (countX*countY)/3;
-            const float gridPos = -(widthHeight/2 + 0.5f);
-            _pathGraph = new PathGrid(gridPos, gridPos, widthHeight, widthHeight, countX, countY);
+            const int widthHeight = countX*countY*3;
+            _pathGraph = new PathGrid(0, 0, widthHeight, widthHeight, countX*3, countY*3);
+
+            _maze = new Maze(countX,countY);
+            _maze.Generate(countX,countY,Maze.GenerateMethod.DepthFirstSearch);
+
+            var p = _maze.begin.GridPosition;
+
+            _ninja.Position = new Vector3(p.X*_maze.unitX,p.Y*_maze.unitY,0);
+
+            var grid = _maze.ToGrid();
+
+            for (var i = 0; i < grid.GetLength(0); i++)
+            {
+                for (var j = 0; j < grid.GetLength(1); j++)
+                {
+                    if(grid[i,j])
+                        _pathGraph.Mark(i,j);
+                }    
+            }
+
             _dwarf.PathGraph = _pathGraph;
 
             _dwarf.BottomLimit = _pathGraph.Position;
@@ -80,15 +101,6 @@
 
             _ninja.BottomLimit = _pathGraph.Position;
             _ninja.TopLimit = _pathGraph.Position + _pathGraph.Size;
-
-            // Create some random obstacles
-            //var random = new Random();
-
-            //for (int i = 0; i < 4; i++)
-            //{
-            //    _pathGraph.Mark(random.Next(_pathGraph.SegmentCountX),
-            //                    random.Next(_pathGraph.SegmentCountY));
-            //}
         }
 
         private void OnIndexChanged()
@@ -146,9 +158,12 @@
                     {
                         if (_pathGraph.IsMarked(x, y))
                         {
-                            var center = new Vector3(_pathGraph.SegmentToPosition(x, y),0.5f);
+                            var center = new Vector3(_pathGraph.SegmentToPosition(x, y), 0);
 
-                            _primitiveBatch.DrawSolidBox(center, Vector3.One*xSize, null, Color.Gold);
+                            _primitiveBatch.DrawSolidBox(
+                                new BoundingBox(center - new Vector3(xSize, ySize, 0),
+                                                center + new Vector3(xSize, ySize, xSize)),
+                                null, Color.Gold);
                         }
                     }
                 }
@@ -187,6 +202,7 @@
             if (mKeys.IsKeyDown(Keys.PageUp) || GamePad.GetState(PlayerIndex.One).Buttons.LeftShoulder == ButtonState.Pressed)
             {
                 _ninja.CurrentHealth = 100;
+                _dwarf.CurrentHealth = 100;
             }
 
             _ninja.Update(GamePad.GetState(PlayerIndex.One));

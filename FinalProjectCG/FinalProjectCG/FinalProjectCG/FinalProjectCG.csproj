@@ -207,6 +207,10 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\MazeGameLibrary\MazeGameLibrary.csproj">
+      <Project>{B923E419-65E7-4415-9685-B5402B03079D}</Project>
+      <Name>MazeGameLibrary</Name>
+    </ProjectReference>
     <ProjectReference Include="..\FinalProjectCGContent\FinalProjectCGContent.contentproj">
       <Name>FinalProjectCGContent %28Content%29</Name>
       <XnaReferenceType>Content</XnaReferenceType>

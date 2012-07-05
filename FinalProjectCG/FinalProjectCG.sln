@@ -5,6 +5,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinalProjectCG", "FinalProj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinalProjectCGContent", "FinalProjectCG\FinalProjectCGContent\FinalProjectCGContent.contentproj", "{00D7EFCC-0168-4192-9ADB-9C02F8544CFF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MazeGameLibrary", "MazeGameLibrary\MazeGameLibrary.csproj", "{B923E419-65E7-4415-9685-B5402B03079D}"
+EndProject
 Global
 	GlobalSection(SubversionScc) = preSolution
 		Svn-Managed = True
@@ -21,6 +23,10 @@ Global
 		{0BE213C1-EF95-498C-8530-479F8E595D29}.Release|x86.Build.0 = Release|x86
 		{00D7EFCC-0168-4192-9ADB-9C02F8544CFF}.Debug|x86.ActiveCfg = Debug|x86
 		{00D7EFCC-0168-4192-9ADB-9C02F8544CFF}.Release|x86.ActiveCfg = Release|x86
+		{B923E419-65E7-4415-9685-B5402B03079D}.Debug|x86.ActiveCfg = Debug|x86
+		{B923E419-65E7-4415-9685-B5402B03079D}.Debug|x86.Build.0 = Debug|x86
+		{B923E419-65E7-4415-9685-B5402B03079D}.Release|x86.ActiveCfg = Release|x86
+		{B923E419-65E7-4415-9685-B5402B03079D}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
