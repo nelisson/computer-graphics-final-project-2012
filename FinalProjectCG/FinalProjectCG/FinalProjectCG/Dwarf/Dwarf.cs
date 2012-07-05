@@ -2,14 +2,12 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using Microsoft.Xna.Framework;
     using Microsoft.Xna.Framework.Graphics;
     using Microsoft.Xna.Framework.Input;
     using MilkshapeModel;
     using Nine.Navigation;
     using Stateless;
-    using Utilities;
 
     public class Dwarf
     {
@@ -46,9 +44,20 @@
 
         public Dictionary<DwarfAnimation, Tuple<int, int>> AnimationsRange;
 
-        public Vector3 Position = Vector3.Zero;
+        private Vector3 _position;
+
+        public Vector3 Position
+        {
+            get { return _position; }
+            set
+            {
+                _position = value;
+                Index = PathGraph.PositionToIndex(_position.X, _position.Y);
+            }
+        }
+
         public float Rotation;
-        private int _currentHealth;
+        private float _currentHealth;
         public bool Walking;
 
         public Dwarf(GraphicsDevice device)
@@ -77,6 +86,8 @@
             SetAnimation(DwarfAnimation.Idle);
         }
 
+       
+
         public bool IsAttacking { get; set; }
 
         public MilkshapeModel Model { get; set; }
@@ -89,7 +100,7 @@
             get { return CurrentHealth > 0; }
         }
 
-        public int CurrentHealth
+        public float CurrentHealth
         {
             get { return _currentHealth; }
             set { _currentHealth = (int) MathHelper.Clamp(value, 0, 100); }
@@ -190,6 +201,7 @@
             IsAttacking = false;
             IsRunning = false;
 
+            Walking = Walking && IsAlive;
 
             if (Walking)
             {
@@ -217,6 +229,9 @@
             }
         }
 
+        public Vector2 TopLimit;
+        public Vector2 BottomLimit;
+
         public void SetAnimation(DwarfAnimation animation, bool reverse = false)
         {
             var tuple = AnimationsRange[animation];
@@ -233,38 +248,58 @@
             Model.AdvanceAnimation((float) gameTime.ElapsedGameTime.TotalMilliseconds/(100/Velocity));
         }
 
-        public void Update(GamePadState getState)
+        public void Update(GamePadState getState, Vector3 enemyPosition, bool enemyIsAlive)
         {
+            if (getState.Buttons.Start == ButtonState.Pressed)
+            {
+                CurrentHealth = 100;
+                Position = Vector3.Zero;
+            }
+
             Vector3 direction = Vector3.Zero;
-            if (Path.Count > 1)
+            if (IsAlive)
             {
-                var point1 =
-                    new Vector3(
-                        PathGraph.SegmentToPosition(Path[Path.Count - 1] % PathGraph.SegmentCountX,
-                                                    Path[Path.Count-1]/ PathGraph.SegmentCountX),
-                        0);
-                var point2 =
-                    new Vector3(
-                        PathGraph.SegmentToPosition(Path[Path.Count-2]%PathGraph.SegmentCountX,
-                                                    Path[Path.Count - 2] / PathGraph.SegmentCountX), 0);
+                if (Path.Count > 1)
+                {
+                    var point1 =
+                        new Vector3(
+                            PathGraph.SegmentToPosition(Path[Path.Count - 1]%PathGraph.SegmentCountX,
+                                                        Path[Path.Count - 1]/PathGraph.SegmentCountX),
+                            0);
+                    var point2 =
+                        new Vector3(
+                            PathGraph.SegmentToPosition(Path[Path.Count - 2]%PathGraph.SegmentCountX,
+                                                        Path[Path.Count - 2]/PathGraph.SegmentCountX), 0);
 
-                direction = point2 - point1;
-                direction.Normalize();
+                    direction = point2 - point1;
+                    direction.Normalize();
 
-                Rotation = (float)Math.Acos(direction.Y);
+                    Rotation = (float) Math.Acos(direction.Y);
 
-                if (direction.X > 0.0f)
-                    Rotation = -Rotation;
+                    if (direction.X > 0.0f)
+                        Rotation = -Rotation;
 
-                Walking = true;
+                    Walking = true;
+                }
+
+                if (PathGraph.PositionToIndex(enemyPosition.X, enemyPosition.Y) == Index)
+                {
+                    Walking = false;
+                    if (enemyIsAlive)
+                    {
+                        direction = enemyPosition - Position;
+                        direction.Normalize();
+
+                        Rotation = (float) Math.Acos(direction.Y);
+
+                        if (direction.X > 0.0f)
+                            Rotation = -Rotation;
+
+                        if (!IsRunning)
+                            Animations.Fire(new Random().Next(2) == 0 ? DwarfAnimation.Attack : DwarfAnimation.Stab);
+                    }
+                }
             }
-            else
-            {
-                Walking = false;
-                if(!IsRunning)
-                    Animations.Fire(new Random().Next(2) == 0 ? DwarfAnimation.Attack : DwarfAnimation.Stab);
-            }
-
 
             // Find out what direction we should be thrusting, using rotation.
 
@@ -274,9 +309,13 @@
                         || Animations.State == DwarfAnimation.Walk)
                         Animations.Fire(DwarfAnimation.Die);
 
-            if (Walking)
+            if (Walking && IsAlive)
             {
                 Position += (direction * (Animations.State == DwarfAnimation.Walk ? 0.01f : 0.03f));
+
+                _position.X = MathHelper.Clamp(Position.X, BottomLimit.X, TopLimit.X);
+                _position.Y = MathHelper.Clamp(Position.Y, BottomLimit.Y, TopLimit.Y);
+
                 if (!IsRunning && Animations.State == DwarfAnimation.Idle
                     && Animations.State != DwarfAnimation.Die)
                 {

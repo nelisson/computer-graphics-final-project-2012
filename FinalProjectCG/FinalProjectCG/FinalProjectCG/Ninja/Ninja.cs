@@ -13,6 +13,10 @@
     {
         private readonly Dictionary<object, NinjaAnimation> _actions = new Dictionary<object, NinjaAnimation>();
 
+        public Vector2 TopLimit;
+        public Vector2 BottomLimit;
+        public float AttackForce = 1;
+
         private int _index;
         public int Index
         {
@@ -41,7 +45,7 @@
             new StateMachine<NinjaAnimation, NinjaAnimation>(NinjaAnimation.Idle2);
 
         public Dictionary<NinjaAnimation, Tuple<int, int>> AnimationsRange;
-        private int _currentHealth;
+        private float _currentHealth;
         private bool _walking;
         public bool IsAttacking { get; set; }
 
@@ -99,7 +103,7 @@
 
         public bool Blocked { get; set; }
 
-        public int CurrentHealth
+        public float CurrentHealth
         {
             get { return _currentHealth; }
             set { _currentHealth = (int) MathHelper.Clamp(value, 0, 100); }
@@ -135,6 +139,7 @@
                              })
                 .PermitReentry(NinjaAnimation.Death1)
                 .Permit(NinjaAnimation.Idle2, NinjaAnimation.Idle2)
+                .Permit(NinjaAnimation.WalkNormal, NinjaAnimation.WalkNormal)
                 .Permit(NinjaAnimation.GroundBack, NinjaAnimation.GroundBack);
 
             Animations.Configure(NinjaAnimation.GroundBack)
@@ -159,6 +164,7 @@
 
             Animations.Configure(NinjaAnimation.Block)
                 .Permit(NinjaAnimation.Blocked, NinjaAnimation.Blocked)
+                .Permit(NinjaAnimation.Death1, NinjaAnimation.Death1)
                 .OnEntry(() =>
                              {
                                  Velocity = 1;
@@ -175,6 +181,7 @@
                              });
 
             Animations.Configure(NinjaAnimation.ReverseBlock)
+                .Permit(NinjaAnimation.Death1, NinjaAnimation.Death1)
                 .Permit(NinjaAnimation.Idle2, NinjaAnimation.Idle2)
                 .OnEntry(() =>
                              {
@@ -185,9 +192,11 @@
 
             Animations.Configure(NinjaAnimation.Overhead)
                 .Permit(NinjaAnimation.Idle2, NinjaAnimation.Idle2)
+                .Permit(NinjaAnimation.Death1, NinjaAnimation.Death1)
                 .OnEntry(() =>
                              {
                                  IsAttacking = true;
+                                 AttackForce = 1.5f;
                                  Velocity = 2;
                                  SetAnimation(NinjaAnimation.Overhead);
                              })
@@ -195,9 +204,11 @@
 
             Animations.Configure(NinjaAnimation.SpinningSword)
                 .Permit(NinjaAnimation.Idle2, NinjaAnimation.Idle2)
+                .Permit(NinjaAnimation.Death1, NinjaAnimation.Death1)
                 .OnEntry(() =>
                              {
                                  IsAttacking = true;
+                                 AttackForce = 3;
                                  Velocity = 3;
                                  SetAnimation(NinjaAnimation.SpinningSword);
                              })
@@ -205,8 +216,10 @@
 
             Animations.Configure(NinjaAnimation.ForwardKick)
                 .Permit(NinjaAnimation.Idle2, NinjaAnimation.Idle2)
+                .Permit(NinjaAnimation.Death1, NinjaAnimation.Death1)
                 .OnEntry(() =>
                              {
+                                 AttackForce = 1;
                                  IsAttacking = true;
                                  Velocity = 1.5f;
                                  SetAnimation(NinjaAnimation.ForwardKick);
@@ -214,8 +227,10 @@
 
             Animations.Configure(NinjaAnimation.SideKick)
                 .Permit(NinjaAnimation.Idle2, NinjaAnimation.Idle2)
+                .Permit(NinjaAnimation.Death1, NinjaAnimation.Death1)
                 .OnEntry(() =>
                              {
+                                 AttackForce = 2;
                                  IsAttacking = true;
                                  Velocity = 1.5f;
                                  SetAnimation(NinjaAnimation.SideKick);
@@ -242,6 +257,7 @@
 
         private void ModelOnStoppedAnimation()
         {
+            AttackForce = 1;
             IsAttacking = false;
             IsRunning = false;
 
@@ -354,40 +370,46 @@
                 Blocked = false;
             }
 
-            Vector2 leftStick = GamePad.GetState(PlayerIndex.One).ThumbSticks.Left;
+            if (IsAlive)
+            {
+                Vector2 leftStick = GamePad.GetState(PlayerIndex.One).ThumbSticks.Left;
 
-            if (keyboardState.IsKeyDown(Keys.Down))
-            {
-                leftStick.Y = -1;
-            }
-            if (keyboardState.IsKeyDown(Keys.Up))
-            {
-                leftStick.Y = 1;
-            }
-            if (keyboardState.IsKeyDown(Keys.Left))
-            {
-                leftStick.X = -1;
-            }
-            if (keyboardState.IsKeyDown(Keys.Right))
-            {
-                leftStick.X = 1;
-            }
+                if (keyboardState.IsKeyDown(Keys.Down))
+                {
+                    leftStick.Y = -1;
+                }
+                if (keyboardState.IsKeyDown(Keys.Up))
+                {
+                    leftStick.Y = 1;
+                }
+                if (keyboardState.IsKeyDown(Keys.Left))
+                {
+                    leftStick.X = -1;
+                }
+                if (keyboardState.IsKeyDown(Keys.Right))
+                {
+                    leftStick.X = 1;
+                }
 
-            leftStick.Normalize();
-            if ((leftStick.X >= 0 || leftStick.X <= 0) || (leftStick.Y >= 0 || leftStick.Y <= 0))
-            {
-                Rotation = (float)Math.Acos(leftStick.Y);
+                leftStick.Normalize();
+                if ((leftStick.X >= 0 || leftStick.X <= 0) || (leftStick.Y >= 0 || leftStick.Y <= 0))
+                {
+                    Rotation = (float) Math.Acos(leftStick.Y);
 
-                if (leftStick.X > 0.0f)
-                    Rotation = -Rotation;
-            }
+                    if (leftStick.X > 0.0f)
+                        Rotation = -Rotation;
+                }
 
 
-            if (!(float.IsNaN(leftStick.X) || float.IsNaN(leftStick.Y)))
-            {
-                // Rotate the model using the left thumbstick, and scale it down.
-                Position.X += leftStick.X*0.05f;
-                Position.Y += leftStick.Y*0.05f;
+                if (!(float.IsNaN(leftStick.X) || float.IsNaN(leftStick.Y)))
+                {
+                    // Rotate the model using the left thumbstick, and scale it down.
+                    Position.X += leftStick.X*0.05f;
+                    Position.Y += leftStick.Y*0.05f;
+
+                    Position.X = MathHelper.Clamp(Position.X, BottomLimit.X, TopLimit.X);
+                    Position.Y = MathHelper.Clamp(Position.Y, BottomLimit.Y, TopLimit.Y);
+                }
             }
 
             if (keyboardState.IsKeyDown(Keys.A))
