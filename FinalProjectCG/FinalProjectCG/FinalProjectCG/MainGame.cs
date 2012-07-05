@@ -27,7 +27,6 @@
 
         // A list of nodes containing the result path.
         private readonly List<int> _path = new List<int>();
-        private TopDownEditorCamera _camera;
         private Input _input;
         private PathGrid _pathGraph;
         private PrimitiveBatch _primitiveBatch;
@@ -50,14 +49,13 @@
         {
             _mBatch = new SpriteBatch(GraphicsDevice);
             _ninja = new Ninja.Ninja(GraphicsDevice);
-            _dwarves.Add(new Dwarf.Dwarf(GraphicsDevice) { Position = new Vector3(50, 0, 0) });
+            _dwarves.Add(new Dwarf.Dwarf(GraphicsDevice));
             _ninja.Animations.Fire(NinjaAnimation.Idle2);
             _mHealthBar = Content.Load<Texture2D>("HealthBar");
 
             Components.Add(new FrameRate(GraphicsDevice, Content.Load<SpriteFont>("Calibri")));
             Components.Add(new InputComponent(Window.Handle));
 
-            _camera = new TopDownEditorCamera(GraphicsDevice);
             _primitiveBatch = new PrimitiveBatch(GraphicsDevice);
 
             // Handle input events
@@ -115,7 +113,7 @@
         private int? GetPickedNode(int x, int y)
         {
             // Gets the pick ray from current mouse cursor
-            Ray ray = GraphicsDevice.Viewport.CreatePickRay(x, y, _camera.View, _camera.Projection);
+            Ray ray = GraphicsDevice.Viewport.CreatePickRay(x, y, _ninja.Effect.View, _ninja.Effect.Projection);
             // Test ray against ground plane
             float? distance = ray.Intersects(new Plane(Vector3.UnitZ, 0));
 
@@ -136,7 +134,7 @@
         /// </summary>
         void DrawGraph()
         {
-            _primitiveBatch.Begin(_camera.View, _camera.Projection);
+            _primitiveBatch.Begin(_ninja.Effect.View, _ninja.Effect.Projection);
             {
                 // Draw grid
                 _primitiveBatch.DrawGrid(_pathGraph, null, Color.Gray);
@@ -235,12 +233,17 @@
 
         private void RenderNinja(GameTime gameTime)
         {
-            _ninja.Effect.World = Matrix.CreateScale(0.5f)*Matrix.CreateRotationX(MathHelper.PiOver2)*Matrix.CreateRotationZ(_ninja.Rotation)*
+            _ninja.Effect.World = Matrix.CreateScale(0.2f)*Matrix.CreateRotationX(MathHelper.PiOver2)*Matrix.CreateRotationZ(_ninja.Rotation)*
                                   Matrix.CreateTranslation(_ninja.Position);
 
-            _ninja.Effect.View = _camera.View;
+            _ninja.Effect.View = Matrix.CreateLookAt(_ninja.Position + new Vector3(0f, -5, 4),
+                                                     _ninja.Position,
+                                                     new Vector3(0, 1, 0));
 
-            _ninja.Effect.Projection = _camera.Projection;
+            _ninja.Effect.Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45),
+                                                                           (float) GraphicsDevice.Viewport.Width/
+                                                                           GraphicsDevice.Viewport.Height, 1f, 10000);
+             
 
             _ninja.Render(gameTime);
         }
@@ -249,12 +252,12 @@
         {
             foreach (var dwarf in _dwarves)
             {
-                dwarf.Effect.World = Matrix.CreateScale(0.05f) * Matrix.CreateRotationX(MathHelper.PiOver2) * Matrix.CreateRotationZ(dwarf.Rotation)
+                dwarf.Effect.World = Matrix.CreateScale(0.025f) * Matrix.CreateRotationX(MathHelper.PiOver2) * Matrix.CreateRotationZ(dwarf.Rotation)
                     *Matrix.CreateTranslation(dwarf.Position);
 
-                dwarf.Effect.View = _camera.View;
+                dwarf.Effect.View = _ninja.Effect.View;
 
-                dwarf.Effect.Projection = _camera.Projection;
+                dwarf.Effect.Projection = _ninja.Effect.Projection;
 
                 dwarf.Render(gameTime);
             }
@@ -267,19 +270,19 @@
             //Draw the negative space for the health bar
 
             _mBatch.Draw(_mHealthBar, new Rectangle(Window.ClientBounds.Width/2 - _mHealthBar.Width/2,
-                                                    30, _mHealthBar.Width, 44),
+                                                    30, _mHealthBar.Width/2, 44/2),
                          new Rectangle(0, 45, _mHealthBar.Width, 44), Color.Gray);
 
             //Draw the current health level based on the current Health
             _mBatch.Draw(_mHealthBar, new Rectangle(Window.ClientBounds.Width/2 - _mHealthBar.Width/2,
-                                                    30, (int) (_mHealthBar.Width*((double) _ninja.CurrentHealth/100)),
-                                                    44),
+                                                    30, (int) (_mHealthBar.Width*((double) _ninja.CurrentHealth/100))/2,
+                                                    44/2),
                          new Rectangle(0, 45, _mHealthBar.Width, 44), Color.Red);
 
             //Draw the box around the health bar
 
             _mBatch.Draw(_mHealthBar, new Rectangle(Window.ClientBounds.Width/2 - _mHealthBar.Width/2,
-                                                    30, _mHealthBar.Width, 44),
+                                                    30, _mHealthBar.Width/2, 44/2),
                          new Rectangle(0, 0, _mHealthBar.Width, 44), Color.White);
 
             _mBatch.End();
