@@ -161,7 +161,21 @@
                 Animations.Fire(IsAlive ? Animations.State : DwarfAnimation.Ground);
             }
             else
-                Animations.Fire(IsAlive ? DwarfAnimation.Idle : DwarfAnimation.Ground);
+            {
+                if(IsAlive)
+                    Animations.Fire(DwarfAnimation.Idle);
+                else
+                {
+                    if (Animations.State != DwarfAnimation.Die && Animations.State != DwarfAnimation.Ground)
+                    {
+                        Animations.Fire(DwarfAnimation.Die);
+                    }
+                    else
+                    {
+                        Animations.Fire(DwarfAnimation.Ground);
+                    }
+                }
+            }
         }
 
         public void SetAnimation(DwarfAnimation animation, bool reverse = false)
