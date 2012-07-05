@@ -14,6 +14,30 @@
         public StateMachine<DwarfAnimation, DwarfAnimation> Animations =
             new StateMachine<DwarfAnimation, DwarfAnimation>(DwarfAnimation.Idle);
 
+        private int _index;
+        public int Index
+        {
+            get { return _index; }
+            set
+            {
+                if (_index != value)
+                    OnIndexChanged();
+
+                _index = value;
+            }
+        }
+
+
+        public delegate void IndexChage();
+
+        public event IndexChage IndexChanged;
+
+        public void OnIndexChanged()
+        {
+            IndexChage handler = IndexChanged;
+            if (handler != null) handler();
+        }
+
         public Dictionary<DwarfAnimation, Tuple<int, int>> AnimationsRange;
 
         public Vector3 Position = Vector3.Zero;

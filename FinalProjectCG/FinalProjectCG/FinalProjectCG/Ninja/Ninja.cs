@@ -13,6 +13,30 @@
     {
         private readonly Dictionary<object, NinjaAnimation> _actions = new Dictionary<object, NinjaAnimation>();
 
+        private int _index;
+        public int Index
+        {
+            get { return _index; }
+            set
+            {
+                var changed = _index != value;
+                _index = value;
+                if(changed)
+                    OnIndexChanged();
+            }
+        }
+
+
+        public delegate void IndexChage();
+
+        public event IndexChage IndexChanged;
+
+        public void OnIndexChanged()
+        {
+            IndexChage handler = IndexChanged;
+            if (handler != null) handler();
+        }
+
         public StateMachine<NinjaAnimation, NinjaAnimation> Animations =
             new StateMachine<NinjaAnimation, NinjaAnimation>(NinjaAnimation.Idle2);
 

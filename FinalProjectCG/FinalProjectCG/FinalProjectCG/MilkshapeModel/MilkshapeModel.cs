@@ -2,6 +2,7 @@
 {
     using System;
     using System.IO;
+    using System.Security.AccessControl;
     using System.Windows.Forms;
     using Microsoft.Xna.Framework;
     using Microsoft.Xna.Framework.Graphics;
@@ -140,7 +141,7 @@
                     try
                     {
                         s = s.Substring(s.LastIndexOf("/") + 1);
-                        Materials[i].Texture = Texture2D.FromStream(gd, new FileStream(fileName.Split(new[] { '\\' })[0] + "\\" + s, FileMode.Open));
+                        Materials[i].Texture = Texture2D.FromStream(gd, new FileStream(fileName.Split(new[] { '\\' })[0] + "\\" + s, FileMode.Open,FileAccess.Read,FileShare.Read));
                     }
                     catch (Exception e)
                     {
