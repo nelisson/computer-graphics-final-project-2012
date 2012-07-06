@@ -6,6 +6,7 @@
     using Microsoft.Xna.Framework.Graphics;
     using Microsoft.Xna.Framework.Input;
     using MilkshapeModel;
+    using Nine.Navigation;
     using Stateless;
     using Utilities;
 
@@ -16,6 +17,8 @@
         public Vector2 TopLimit;
         public Vector2 BottomLimit;
         public float AttackForce = 1;
+
+        public PathGrid PathGraph;
 
         private int _index;
         public int Index
@@ -304,18 +307,6 @@
             Model.MaterialIndex = (short) trans;
         }
 
-        public Vector3 Direction
-        {
-            get 
-            { 
-                var v = Position - OldPosition;
-                v.Normalize();
-                return v;
-            }
-        }
-
-        private Vector3 OldPosition;
-
         public void Update(GamePadState getState)
         {
             var keyboardState = Keyboard.GetState(PlayerIndex.One);
@@ -415,11 +406,15 @@
 
                 if (!(float.IsNaN(leftStick.X) || float.IsNaN(leftStick.Y)))
                 {
-                    OldPosition = new Vector3(Position.X,Position.Y,Position.Z);
+                    var nextMove = new Vector3(Position.X + leftStick.X*0.05f, Position.Y + leftStick.Y*0.05f,
+                                               Position.Z);
 
-                    // Rotate the model using the left thumbstick, and scale it down.
-                    Position.X += leftStick.X*0.05f;
-                    Position.Y += leftStick.Y*0.05f;
+
+                    var index = PathGraph.PositionToIndex(nextMove.X, nextMove.Y);
+                    var position = PathGraph.IndexToPosition(index);
+
+                    if (!PathGraph.IsMarked(position.X, position.Y))
+                        Position = nextMove;
 
                     Position.X = MathHelper.Clamp(Position.X, BottomLimit.X, TopLimit.X);
                     Position.Y = MathHelper.Clamp(Position.Y, BottomLimit.Y, TopLimit.Y);
