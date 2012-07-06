@@ -51,8 +51,8 @@
         }
 
         private Maze _maze;
-        const int countX = 5;
-        const int countY = 5;
+        const int countX = 8;
+        const int countY = 8;
         /// <summary>
         ///   LoadContent will be called once per game and is the place to load all of your content.
         /// </summary>
@@ -105,6 +105,8 @@
                 }    
             }
             _dwarf.PathGraph = _pathGraph;
+            _ninja.PathGraph = _pathGraph;
+
             var r = new Random();
 
             var cubo = r.Next(validos.Count);
@@ -116,9 +118,6 @@
             v = _pathGraph.IndexToPosition(g);
 
             _dwarf.Position = new Vector3(v.X, v.Y, 0);
-
-
-
             
 
             _dwarf.BottomLimit = _pathGraph.Position;
