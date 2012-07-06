@@ -2,7 +2,6 @@
 {
     using System;
     using System.IO;
-    using System.Security.AccessControl;
     using System.Windows.Forms;
     using Microsoft.Xna.Framework;
     using Microsoft.Xna.Framework.Graphics;
@@ -25,6 +24,22 @@
         private short _numJoints;
         private MilkshapeJoint[] _joints;
 
+        private float _minX = float.PositiveInfinity;
+        private float _minY = float.PositiveInfinity;
+        private float _minZ = float.PositiveInfinity;
+
+        private float _maxX = float.NegativeInfinity;
+        private float _maxY = float.NegativeInfinity;
+        private float _maxZ = float.NegativeInfinity;
+
+        public BoundingBox Bounding
+        {
+            get
+            {
+                return new BoundingBox(new Vector3(_minX,_minY,_minZ), new Vector3(_maxX,_maxY,_maxZ));
+            }
+        }
+
         private void LoadMS3DFromFile(string fileName, GraphicsDevice gd)
         {
             var fs = File.Open(fileName, FileMode.Open);
@@ -40,6 +55,15 @@
                 Vertices[i].Vertex[0] = br.ReadSingle();
                 Vertices[i].Vertex[1] = br.ReadSingle();
                 Vertices[i].Vertex[2] = br.ReadSingle();
+
+                _minX = Math.Min(_minX, Vertices[i].Vertex[0]);
+                _minY = Math.Min(_minY, Vertices[i].Vertex[1]);
+                _minZ = Math.Min(_minZ, Vertices[i].Vertex[2]);
+
+                _maxX = Math.Max(_maxX, Vertices[i].Vertex[0]);
+                _maxY = Math.Max(_maxY, Vertices[i].Vertex[1]);
+                _maxZ = Math.Max(_maxZ, Vertices[i].Vertex[2]);
+
                 Vertices[i].BoneId = (char) br.ReadByte();
                 Vertices[i].ReferenceCount = br.ReadByte();
             }

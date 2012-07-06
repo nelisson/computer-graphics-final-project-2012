@@ -259,6 +259,7 @@
                 _dwarf.CurrentHealth = 100;
             }
 
+            
             _ninja.Update(GamePad.GetState(PlayerIndex.One));
             var center = _ninja.Position;
             _ninja.Index = _pathGraph.PositionToIndex(center.X, center.Y);
